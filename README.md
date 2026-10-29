@@ -56,8 +56,6 @@ Aplikasi web e-commerce UMKM lokal untuk penjualan **tanaman hias, tanaman buah,
 | Styling | `[Tailwind CSS / Bootstrap]` via CDN |
 | Versi Control | Git |
 
-> Autentikasi dibuat **manual** (tanpa Breeze/Jetstream/starter kit).
-
 ---
 
 ## 🔐 Hak Akses Pengguna
@@ -137,7 +135,7 @@ nurmgreen/
 
 ```bash
 # 1. Clone repository
-git clone [LINK_REPOSITORY]
+git clone https://github.com/rifzky11/nurmgreen.git
 cd nurmgreen
 
 # 2. Install dependency
