@@ -91,8 +91,12 @@ class AuthController extends Controller
         RateLimiter::clear($key);
         $request->session()->regenerate();
 
-        // intended(): kembali ke halaman yang tadi ingin dibuka sebelum dipaksa login
-        return redirect()->intended(route('home'))->with('success', 'Berhasil masuk. Halo, '.auth()->user()->name.'!');
+        // Redirect sesuai role: admin ke dashboard, customer ke beranda
+        $tujuan = auth()->user()->isAdmin()
+            ? route('admin.dashboard')
+            : route('home');
+
+        return redirect()->to($tujuan)->with('success', 'Berhasil masuk. Halo, '.auth()->user()->name.'!');
     }
 
     /**

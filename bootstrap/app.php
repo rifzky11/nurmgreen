@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnsureUserHasRole;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -12,7 +13,18 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        // Alias 'role' untuk middleware pembatas akses berbasis role
+        $middleware->alias([
+            'role' => EnsureUserHasRole::class,
+        ]);
+
+        // User yang sudah login tidak perlu melihat form login lagi:
+        // admin diarahkan ke dashboard, customer ke beranda.
+        $middleware->redirectUsersTo(
+            fn (Request $request) => $request->user()?->isAdmin()
+                ? route('admin.dashboard')
+                : route('home')
+        );
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

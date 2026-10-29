@@ -31,7 +31,10 @@
                 </div>
 
                 <div class="header-actions">
-                    <a href="{{ url('/') }}" class="icon-cart" aria-label="Keranjang">
+                    <a href="{{ auth()->check()
+                            ? (auth()->user()->isAdmin() ? route('admin.dashboard') : route('cart.index'))
+                            : route('login') }}"
+                       class="icon-cart" aria-label="Keranjang">
                         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                             <path d="M6 6h15l-1.5 9h-12z"/>
                             <path d="M6 6 5 3H2"/>
@@ -41,6 +44,13 @@
                     </a>
                     <span class="divider"></span>
                     @auth
+                        {{-- Menu berbeda sesuai role --}}
+                        @if (auth()->user()->isAdmin())
+                            <a href="{{ route('admin.dashboard') }}" class="btn btn-outline">Dashboard</a>
+                        @else
+                            <a href="{{ route('orders.index') }}" class="btn btn-outline">Pesanan</a>
+                        @endif
+
                         {{-- Sudah login: tampilkan nama & tombol keluar --}}
                         <span class="user-chip">{{ auth()->user()->name }}</span>
                         <form action="{{ route('logout') }}" method="POST" class="logout-form">
@@ -77,41 +87,7 @@
     </main>
 
     <footer class="site-footer">
-        <div class="wrap">
-            <div class="footer-grid">
-                <div>
-                    <h3>NurmGreen</h3>
-                    <ul>
-                        <li><a href="{{ url('/') }}">Tentang kami</a></li>
-                        <li><a href="{{ url('/') }}">Karir</a></li>
-                        <li><a href="{{ url('/') }}">Blog</a></li>
-                    </ul>
-                </div>
-                <div>
-                    <h3>Beli</h3>
-                    <ul>
-                        <li><a href="{{ url('/') }}">Tanaman</a></li>
-                        <li><a href="{{ url('/') }}">Pupuk</a></li>
-                        <li><a href="{{ url('/') }}">Obat tanaman</a></li>
-                    </ul>
-                </div>
-                <div>
-                    <h3>Bantuan</h3>
-                    <ul>
-                        <li><a href="{{ url('/') }}">Cara belanja</a></li>
-                        <li><a href="{{ url('/') }}">Pengiriman</a></li>
-                        <li><a href="{{ url('/') }}">Hubungi kami</a></li>
-                    </ul>
-                </div>
-                <div>
-                    <h3>Keamanan</h3>
-                    <ul>
-                        <li>Pembayaran &amp; pengiriman menyusul di fitur berikutnya</li>
-                    </ul>
-                </div>
-            </div>
-            <p class="footer-copy">&copy; {{ date('Y') }} NurmGreen. Toko tanaman, pupuk, dan obat tanaman.</p>
-        </div>
+        <p class="footer-copy">&copy; {{ date('Y') }} NurmGreen. Toko tanaman, pupuk, dan obat tanaman.</p>
     </footer>
 </body>
 </html>
