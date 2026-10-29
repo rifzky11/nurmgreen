@@ -40,9 +40,18 @@
                         </svg>
                     </a>
                     <span class="divider"></span>
-                    {{-- Auth belum dibuat; tombol disiapkan dulu --}}
-                    <a href="{{ url('/') }}" class="btn btn-outline">Masuk</a>
-                    <a href="{{ url('/') }}" class="btn btn-solid">Daftar</a>
+                    @auth
+                        {{-- Sudah login: tampilkan nama & tombol keluar --}}
+                        <span class="user-chip">{{ auth()->user()->name }}</span>
+                        <form action="{{ route('logout') }}" method="POST" class="logout-form">
+                            @csrf
+                            <button type="submit" class="btn btn-outline">Keluar</button>
+                        </form>
+                    @else
+                        {{-- Belum login: arahkan ke halaman auth --}}
+                        <a href="{{ route('login') }}" class="btn btn-outline">Masuk</a>
+                        <a href="{{ route('register') }}" class="btn btn-solid">Daftar</a>
+                    @endauth
                 </div>
             </div>
 
