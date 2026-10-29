@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <rect width="200" height="200" fill="#eef6ea"/>
+  <rect x="78" y="70" width="44" height="80" rx="8" fill="#43a047"/>
+  <rect x="92" y="48" width="16" height="28" rx="4" fill="#2e7d32"/>
+  <circle cx="100" cy="44" r="8" fill="#1b5e20"/>
+  <rect x="70" y="95" width="60" height="18" fill="#c8e6c9"/>
+  <text x="100" y="108" text-anchor="middle" fill="#1b5e20" font-size="9" font-family="Arial" font-weight="700">OBAT</text>
+</svg>

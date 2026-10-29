@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <rect width="200" height="200" fill="#efe8dc"/>
+  <path d="M60 70h80l12 90H48z" fill="#7a4a1e"/>
+  <path d="M60 70h80l-8 20H68z" fill="#5c3714"/>
+  <text x="100" y="130" text-anchor="middle" fill="#f5e6c8" font-size="14" font-family="Arial" font-weight="700">PUPUK</text>
+  <text x="100" y="148" text-anchor="middle" fill="#e8d5b5" font-size="10" font-family="Arial">5 KG</text>
+</svg>
