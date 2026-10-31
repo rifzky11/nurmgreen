@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exceptions\CheckoutException;
 use App\Exceptions\InsufficientStockException;
 use App\Http\Requests\CheckoutRequest;
 use App\Models\CartItem;
@@ -21,10 +22,24 @@ class CheckoutController extends Controller
      */
     public function index(Request $request): View|RedirectResponse
     {
-        $items = CartItem::with('product.category')
-            ->where('user_id', $request->user()->id)
-            ->latest()
-            ->get();
+        $selectedIds = $this->selectedItemIds($request);
+
+        if ($selectedIds === []) {
+            return redirect()
+                ->route('cart.index')
+                ->with('error', 'Pilih minimal satu produk untuk checkout.');
+        }
+
+        $query = CartItem::with('product.category')
+            ->where('user_id', $request->user()->id);
+
+        // Jika user mencentang produk tertentu di keranjang, hanya item itu
+        // yang ditampilkan & dihitung. Tanpa parameter items = semua item.
+        if ($selectedIds !== null) {
+            $query->whereIn('id', $selectedIds);
+        }
+
+        $items = $query->latest()->get();
 
         if ($items->isEmpty()) {
             return redirect()
@@ -32,15 +47,31 @@ class CheckoutController extends Controller
                 ->with('error', 'Keranjang kamu masih kosong. Tambahkan produk dulu sebelum checkout.');
         }
 
+        // Pastikan semua ID yang diminta memang milik user ini.
+        if ($selectedIds !== null && $items->count() !== count($selectedIds)) {
+            return redirect()
+                ->route('cart.index')
+                ->with('error', 'Sebagian produk yang dipilih tidak ditemukan di keranjang.');
+        }
+
         // Subtotal dihitung dari harga produk di database, bukan dari browser.
         $subtotal = $items->sum(fn (CartItem $item) => (float) $item->product->price * $item->quantity);
         $total = $subtotal;
+
+        // Master data alamat: alamat utama dipakai untuk prefill form pengiriman.
+        $addresses = $request->user()->addresses()
+            ->orderByDesc('is_default')
+            ->latest()
+            ->get();
+        $defaultAddress = $addresses->firstWhere('is_default', true) ?? $addresses->first();
 
         return view('customer.checkout', [
             'items' => $items,
             'subtotal' => $subtotal,
             'total' => $total,
             'user' => $request->user(),
+            'addresses' => $addresses,
+            'defaultAddress' => $defaultAddress,
         ]);
     }
 
@@ -58,6 +89,15 @@ class CheckoutController extends Controller
         $user = $request->user();
         $data = $request->validated();
 
+        // ID keranjang yang dipilih; null berarti seluruh isi keranjang.
+        $selectedIds = array_key_exists('items', $data)
+            ? collect($data['items'])->map(fn ($id) => (int) $id)->unique()->values()->all()
+            : null;
+
+        if ($selectedIds === []) {
+            return back()->withInput()->with('error', 'Pilih minimal satu produk untuk checkout.');
+        }
+
         // Cek cepat sebelum transaksi; pengecekan ulang tetap dilakukan
         // di dalam transaksi untuk mengantisipasi keranjang berubah bersamaan.
         if (! CartItem::where('user_id', $user->id)->exists()) {
@@ -67,16 +107,24 @@ class CheckoutController extends Controller
         }
 
         try {
-            $order = DB::transaction(function () use ($user, $data) {
-                // Kunci baris keranjang milik user ini selama transaksi.
-                $cartItems = CartItem::query()
-                    ->where('user_id', $user->id)
-                    ->orderBy('id')
-                    ->lockForUpdate()
-                    ->get();
+            $order = DB::transaction(function () use ($user, $data, $selectedIds) {
+                $cartQuery = CartItem::query()->where('user_id', $user->id);
+
+                if ($selectedIds !== null) {
+                    $cartQuery->whereIn('id', $selectedIds);
+                }
+
+                // Kunci hanya baris keranjang yang akan diproses.
+                $cartItems = $cartQuery->orderBy('id')->lockForUpdate()->get();
 
                 if ($cartItems->isEmpty()) {
-                    throw new InsufficientStockException('Keranjang kamu masih kosong.');
+                    throw new CheckoutException('Keranjang kamu masih kosong atau produk yang dipilih sudah tidak ada.');
+                }
+
+                // Jumlah harus sama: mencegah ID milik user lain / item yang
+                // sudah terhapus ikut diproses diam-diam.
+                if ($selectedIds !== null && $cartItems->count() !== count($selectedIds)) {
+                    throw new CheckoutException('Sebagian produk yang dipilih tidak ditemukan di keranjang.');
                 }
 
                 // Ambil & kunci semua produk terkait untuk validasi stok terbaru.
@@ -148,12 +196,15 @@ class CheckoutController extends Controller
                     }
                 }
 
-                // Keranjang dikosongkan hanya setelah order & stok tersimpan.
-                CartItem::where('user_id', $user->id)->delete();
+                // Hanya item yang diproses yang dihapus; item lain yang tidak
+                // dicentang tetap tersimpan di keranjang.
+                CartItem::where('user_id', $user->id)
+                    ->whereIn('id', $cartItems->pluck('id'))
+                    ->delete();
 
                 return $order;
             });
-        } catch (InsufficientStockException $e) {
+        } catch (CheckoutException $e) {
             // DB::transaction sudah melakukan rollback sebelum exception ini
             // sampai ke sini. Kembalikan user ke form dengan pesan error.
             return back()->withInput()->with('error', $e->getMessage());
@@ -178,6 +229,25 @@ class CheckoutController extends Controller
             ->firstOrFail();
 
         return view('customer.checkout-success', compact('order'));
+    }
+
+    /**
+     * Baca pilihan item dari query string (?items[]=1&items[]=2).
+     * null = parameter tidak ada (checkout semua item),
+     * []   = parameter ada tapi kosong/tidak valid.
+     */
+    private function selectedItemIds(Request $request): ?array
+    {
+        if (! $request->has('items')) {
+            return null;
+        }
+
+        return collect($request->query('items', []))
+            ->map(fn ($id) => (int) $id)
+            ->filter(fn (int $id) => $id > 0)
+            ->unique()
+            ->values()
+            ->all();
     }
 
     /**

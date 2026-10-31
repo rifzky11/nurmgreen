@@ -48,8 +48,10 @@
                             <circle cx="9" cy="20" r="1.4" fill="currentColor" stroke="none"/>
                             <circle cx="18" cy="20" r="1.4" fill="currentColor" stroke="none"/>
                         </svg>
-                        @if ($cartCount > 0)
-                            <span class="cart-count">{{ $cartCount > 99 ? '99+' : $cartCount }}</span>
+                        @if (auth()->check() && ! auth()->user()->isAdmin())
+                            {{-- Selalu ada untuk customer agar bisa diperbarui via AJAX --}}
+                            <span class="cart-count" id="cartCountBadge"
+                                  @if ($cartCount === 0) hidden @endif>{{ $cartCount > 99 ? '99+' : $cartCount }}</span>
                         @endif
                     </a>
 
@@ -105,6 +107,10 @@
                                     <a href="{{ route('cart.index') }}"
                                        @class(['nav-link', 'is-active' => request()->routeIs('cart.*')])>
                                         Keranjang
+                                    </a>
+                                    <a href="{{ route('addresses.index') }}"
+                                       @class(['nav-link', 'is-active' => request()->routeIs('addresses.*')])>
+                                        Alamat Saya
                                     </a>
                                     <a href="{{ route('orders.index') }}"
                                        @class(['nav-link', 'is-active' => request()->routeIs('orders.*')])>

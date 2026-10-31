@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\CartItem;
 use App\Models\Product;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -94,7 +95,7 @@ class CartController extends Controller
     /**
      * Ubah quantity satu item keranjang.
      */
-    public function update(Request $request, CartItem $cartItem): RedirectResponse
+    public function update(Request $request, CartItem $cartItem): RedirectResponse|JsonResponse
     {
         // Cegah akses item milik user lain (403 jika bukan pemilik)
         $this->authorizeOwner($cartItem);
@@ -107,11 +108,33 @@ class CartController extends Controller
         $stock = $cartItem->product->stock;
 
         if ($validated['quantity'] > $stock) {
-            return back()->with('error',
-                'Jumlah melebihi stok. Stok tersedia untuk "'.$cartItem->product->name.'": '.$stock.'.');
+            $message = 'Jumlah melebihi stok. Stok tersedia untuk "'
+                .$cartItem->product->name.'": '.$stock.'.';
+
+            // Request AJAX: kembalikan JSON agar input bisa dikembalikan tanpa reload.
+            if ($request->expectsJson()) {
+                return response()->json(['message' => $message], 422);
+            }
+
+            return back()->with('error', $message);
         }
 
         $cartItem->update(['quantity' => $validated['quantity']]);
+
+        // Update via fetch: kirim data terbaru untuk memperbarui subtotal,
+        // ringkasan keranjang, dan badge navbar tanpa memuat ulang halaman.
+        if ($request->expectsJson()) {
+            $lineSubtotal = (float) $cartItem->product->price * $cartItem->quantity;
+
+            return response()->json([
+                'quantity' => $cartItem->quantity,
+                'line_subtotal' => $lineSubtotal,
+                'formatted_line_subtotal' => 'Rp '.number_format($lineSubtotal, 0, ',', '.'),
+                'cart_quantity' => (int) $request->user()->cartItems()->sum('quantity'),
+                'max_quantity' => $stock,
+                'message' => 'Jumlah "'.$cartItem->product->name.'" diperbarui.',
+            ]);
+        }
 
         return back()->with('success', 'Jumlah "'.$cartItem->product->name.'" diperbarui.');
     }

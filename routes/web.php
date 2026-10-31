@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AddressController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\OrderController as AdminOrderController;
@@ -94,6 +95,15 @@ Route::middleware(['auth', 'role:customer'])->group(function () {
 
     Route::delete('/keranjang/{cartItem}', [CartController::class, 'destroy'])
         ->name('cart.destroy');
+
+    // Buku alamat customer (master data alamat pengiriman).
+    Route::get('/alamat', [AddressController::class, 'index'])->name('addresses.index');
+    Route::post('/alamat', [AddressController::class, 'store'])->name('addresses.store');
+    Route::get('/alamat/{address}/ubah', [AddressController::class, 'edit'])->name('addresses.edit');
+    Route::put('/alamat/{address}', [AddressController::class, 'update'])->name('addresses.update');
+    Route::delete('/alamat/{address}', [AddressController::class, 'destroy'])->name('addresses.destroy');
+    Route::patch('/alamat/{address}/utama', [AddressController::class, 'setDefault'])
+        ->name('addresses.default');
 
     // Checkout: form pengiriman, proses pesanan (transaksi DB), halaman sukses.
     Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');

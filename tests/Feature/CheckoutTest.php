@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Address;
 use App\Models\CartItem;
 use App\Models\Category;
 use App\Models\Order;
@@ -308,5 +309,106 @@ class CheckoutTest extends TestCase
         $this->assertCount(2, $codes);
         $this->assertSame($codes->count(), $codes->unique()->count());
         $codes->each(fn (string $code) => $this->assertMatchesRegularExpression('/^NG-\d{8}-[A-Z0-9]{4}$/', $code));
+    }
+
+    public function test_checkout_page_can_be_limited_to_selected_cart_items(): void
+    {
+        $customer = $this->customer();
+        $first = $this->product(['name' => 'Monstera', 'price' => 50000]);
+        $second = $this->product(['name' => 'Lidah Mertua', 'price' => 20000]);
+
+        $this->item($customer, $first, 1);
+        $selected = $this->item($customer, $second, 2);
+
+        $this->actingAs($customer)
+            ->get(route('checkout.index', ['items' => [$selected->id]]))
+            ->assertOk()
+            ->assertSee('Lidah Mertua')
+            ->assertDontSee('Monstera')
+            ->assertSee('Rp 40.000')
+            ->assertDontSee('Rp 50.000');
+    }
+
+    public function test_selected_checkout_only_processes_selected_items(): void
+    {
+        $customer = $this->customer();
+        $first = $this->product(['name' => 'Monstera', 'price' => 50000, 'stock' => 5]);
+        $second = $this->product(['name' => 'Lidah Mertua', 'price' => 20000, 'stock' => 5]);
+
+        $selected = $this->item($customer, $first, 1);
+        $unselected = $this->item($customer, $second, 2);
+
+        $this->actingAs($customer)->post(route('checkout.store'), $this->shippingData([
+            'items' => [$selected->id],
+        ]));
+
+        $order = Order::sole();
+
+        $this->assertSame(50000.0, (float) $order->total_price);
+        $this->assertDatabaseHas('order_items', [
+            'order_id' => $order->id,
+            'product_id' => $first->id,
+            'quantity' => 1,
+        ]);
+        $this->assertDatabaseMissing('order_items', ['product_id' => $second->id]);
+
+        $this->assertSame(4, $first->fresh()->stock);
+        $this->assertSame(5, $second->fresh()->stock);
+
+        // Item yang tidak dicentang tetap tinggal di keranjang.
+        $this->assertDatabaseMissing('cart_items', ['id' => $selected->id]);
+        $this->assertDatabaseHas('cart_items', ['id' => $unselected->id, 'quantity' => 2]);
+    }
+
+    public function test_checkout_rejects_cart_item_ids_owned_by_another_user(): void
+    {
+        $owner = $this->customer();
+        $intruder = $this->customer(['name' => 'Ripski']);
+        $ownerItem = $this->item($owner, $this->product(['stock' => 5]), 1);
+        $this->item($intruder, $this->product(['stock' => 5]), 1);
+
+        $this->actingAs($intruder)
+            ->post(route('checkout.store'), $this->shippingData([
+                'items' => [$ownerItem->id],
+            ]))
+            ->assertSessionHas('error');
+
+        $this->assertDatabaseCount('orders', 0);
+        $this->assertDatabaseHas('cart_items', ['id' => $ownerItem->id]);
+    }
+
+    public function test_checkout_rejects_unknown_selected_item(): void
+    {
+        $customer = $this->customer();
+        $this->item($customer, $this->product(), 1);
+
+        $this->actingAs($customer)
+            ->get(route('checkout.index', ['items' => [999999]]))
+            ->assertRedirect(route('cart.index'))
+            ->assertSessionHas('error');
+    }
+
+    public function test_checkout_prefills_default_saved_address(): void
+    {
+        $customer = $this->customer();
+        $this->item($customer, $this->product(), 1);
+
+        Address::create([
+            'user_id' => $customer->id,
+            'label' => 'Rumah',
+            'recipient_name' => 'Penerima Alamat',
+            'phone' => '081200000002',
+            'address' => 'Jl. Alamat Utama No. 1, Jakarta',
+            'is_default' => true,
+        ]);
+
+        $this->actingAs($customer)
+            ->get(route('checkout.index'))
+            ->assertOk()
+            ->assertSee('Alamat Tersimpan')
+            ->assertSee('value="Penerima Alamat"', false)
+            ->assertSee('value="081200000002"', false)
+            ->assertSee('Jl. Alamat Utama No. 1, Jakarta')
+            ->assertSee('Kelola Alamat');
     }
 }
