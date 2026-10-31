@@ -21,7 +21,7 @@ SET @@SESSION.SQL_LOG_BIN= 0;
 -- GTID state at the beginning of the backup 
 --
 
-SET @@GLOBAL.GTID_PURGED=/*!80000 '+'*/ 'c09d416e-d204-11f1-9355-44ecd4626cf8:1-1820';
+SET @@GLOBAL.GTID_PURGED=/*!80000 '+'*/ 'c09d416e-d204-11f1-9355-44ecd4626cf8:1-1893';
 
 --
 -- Table structure for table `addresses`
@@ -124,7 +124,7 @@ CREATE TABLE `cart_items` (
   KEY `cart_items_product_id_foreign` (`product_id`),
   CONSTRAINT `cart_items_product_id_foreign` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`) ON DELETE RESTRICT,
   CONSTRAINT `cart_items_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=18 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -152,7 +152,7 @@ CREATE TABLE `categories` (
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `categories_slug_unique` (`slug`)
-) ENGINE=InnoDB AUTO_INCREMENT=25 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -161,6 +161,7 @@ CREATE TABLE `categories` (
 
 LOCK TABLES `categories` WRITE;
 /*!40000 ALTER TABLE `categories` DISABLE KEYS */;
+INSERT INTO `categories` VALUES (1,'Tanaman Hias','tanaman-hias','Tanaman hias indoor dan outdoor untuk mempercantik ruangan.','2026-10-31 14:52:21','2026-10-31 14:52:21'),(2,'Bibit & Benih','bibit-benih','Bibit sayur dan benih unggul siap tanam.','2026-10-31 14:52:21','2026-10-31 14:52:21'),(3,'Pupuk & Media','pupuk-media','Pupuk organik, NPK, dan media tanam.','2026-10-31 14:52:21','2026-10-31 14:52:21'),(4,'Obat Tanaman','obat-tanaman','Fungisida dan pestisida nabati untuk merawat tanaman.','2026-10-31 14:52:21','2026-10-31 14:52:21');
 /*!40000 ALTER TABLE `categories` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -399,7 +400,7 @@ CREATE TABLE `products` (
   UNIQUE KEY `products_slug_unique` (`slug`),
   KEY `products_category_id_foreign` (`category_id`),
   CONSTRAINT `products_category_id_foreign` FOREIGN KEY (`category_id`) REFERENCES `categories` (`id`) ON DELETE RESTRICT
-) ENGINE=InnoDB AUTO_INCREMENT=30 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -408,6 +409,7 @@ CREATE TABLE `products` (
 
 LOCK TABLES `products` WRITE;
 /*!40000 ALTER TABLE `products` DISABLE KEYS */;
+INSERT INTO `products` VALUES (1,1,'Monstera Deliciosa pot 50cm tanaman hias indoor','monstera-deliciosa-50cm','Monstera deliciosa pot 50cm, daun lebar mengkilap. Perawatan mudah, cocok untuk ruang tamu maupun kantor.',85000.00,12,'products/p1.svg',1,'2026-10-31 14:52:21','2026-10-31 14:52:21'),(2,1,'Lidah Mertua Sansevieria pot 30cm pembersih udara','lidah-mertua-sansevieria-30cm','Sansevieria standar 30cm, tahan minim air dan pembersih udara alami.',45000.00,8,'products/p6.svg',1,'2026-10-31 14:52:21','2026-10-31 14:52:21'),(3,1,'Kaktus mini pot terracotta succulent campur','kaktus-mini-terracotta','Kaktus mini dalam pot terracotta 8cm. Varian succulent dikirim acak.',18500.00,0,'products/p2.svg',1,'2026-10-31 14:52:21','2026-10-31 14:52:21'),(4,2,'Bibit pakcoy unggul siap tanam 50 batang','bibit-pakcoy-unggul-50','Bibit pakcoy F1 berumur 14 hari, tinggi 8-10 cm, siap pindah tanam.',12000.00,40,'products/p4.svg',1,'2026-10-31 14:52:21','2026-10-31 14:52:21'),(5,2,'Bibit tomat cherry pot polybag','bibit-tomat-cherry','Bibit tomat cherry tinggi 15 cm, berbuah manis, cocok untuk pot rumah.',9500.00,25,'products/p4.svg',1,'2026-10-31 14:52:21','2026-10-31 14:52:21'),(6,2,'Bibit cabai rawit merah unggul','bibit-cabai-rawit-merah','Bibit cabai rawit merah F1, pedas khas, produktif untuk pekarangan.',11000.00,4,'products/p4.svg',1,'2026-10-31 14:52:21','2026-10-31 14:52:21'),(7,3,'Pupuk kompos organik 5kg media tanam subur','pupuk-kompos-organik-5kg','Kompos organik matang 5kg dari kotoran ternak, bebas bau, memperbaiki struktur tanah.',32000.00,30,'products/p3.svg',1,'2026-10-31 14:52:21','2026-10-31 14:52:21'),(8,3,'Pupuk NPK Mutiara 1kg all purpose','pupuk-npk-mutiara-1kg','NPK 16-16-16 untuk segala jenis tanaman, 1kg.',16500.00,50,'products/p3.svg',1,'2026-10-31 14:52:21','2026-10-31 14:52:21'),(9,3,'Media tanam cocopeat 2kg serbuk halus','cocopeat-2kg','Cocopeat serbuk halus 2kg, kapasitas air tinggi, campuran ideal media tanam.',14000.00,0,'products/p3.svg',1,'2026-10-31 14:52:21','2026-10-31 14:52:21'),(10,4,'Fungisida nabati 250ml obat jamur daun','fungisida-nabati-250ml','Fungisida nabati aman untuk sayuran, mengatasi bercak daun dan embun tepung.',27900.00,18,'products/p5.svg',1,'2026-10-31 14:52:21','2026-10-31 14:52:21'),(11,4,'Pestisida alami neem oil 100ml anti hama','neem-oil-100ml','Neem oil murni 100ml untuk kutu daun, thrips, dan tungau. Aman untuk tanaman dalam ruangan.',23000.00,7,'products/p5.svg',1,'2026-10-31 14:52:21','2026-10-31 14:52:21'),(12,1,'Tanaman indoor golden pothos gantung','golden-pothos-gantung','Golden pothos variegata untuk pot gantung, perawatan sangat mudah.',35000.00,5,'products/p1.svg',0,'2026-10-31 14:52:21','2026-10-31 14:52:21');
 /*!40000 ALTER TABLE `products` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -459,7 +461,7 @@ CREATE TABLE `users` (
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `users_email_unique` (`email`)
-) ENGINE=InnoDB AUTO_INCREMENT=32 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -468,6 +470,7 @@ CREATE TABLE `users` (
 
 LOCK TABLES `users` WRITE;
 /*!40000 ALTER TABLE `users` DISABLE KEYS */;
+INSERT INTO `users` VALUES (1,'Admin NurmGreen','admin@nurmgreen.app','$2y$12$tTn7BkBmo6EsOiGRkMXiquVVDFOfWGDFD8/.wSeR0aYV3ZhtjMBTq','admin',NULL,NULL,'2026-10-31 14:52:20','2026-10-31 14:52:20'),(2,'Marl','marl@nurmgreen.app','$2y$12$i/gZ/.eKsZcfUIRjna1FbeSPei5kFEFOij9SEXLScgQZjDFbZcyii','customer',NULL,NULL,'2026-10-31 14:52:21','2026-10-31 14:52:21'),(3,'Ripski','ripski@nurmgreen.app','$2y$12$4EcHz5IRqQtWsaqCGY1Od.T0niqP4.lTEwTWsm978SFkqarr8JL76','customer',NULL,NULL,'2026-10-31 14:52:21','2026-10-31 14:52:21');
 /*!40000 ALTER TABLE `users` ENABLE KEYS */;
 UNLOCK TABLES;
 SET @@SESSION.SQL_LOG_BIN = @MYSQLDUMP_TEMP_LOG_BIN;
@@ -481,4 +484,4 @@ SET @@SESSION.SQL_LOG_BIN = @MYSQLDUMP_TEMP_LOG_BIN;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-11-01  4:49:48
+-- Dump completed on 2026-11-01  4:52:26
