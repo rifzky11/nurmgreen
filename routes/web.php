@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CartController;
@@ -64,6 +65,13 @@ Route::middleware(['auth', 'role:admin'])
 
         // Resource lengkap termasuk show (detail produk untuk admin)
         Route::resource('products', ProductController::class);
+
+        // Kelola pesanan: daftar + filter, detail, dan ubah status.
+        Route::get('/orders', [AdminOrderController::class, 'index'])->name('orders.index');
+        Route::get('/orders/{order:order_code}', [AdminOrderController::class, 'show'])
+            ->name('orders.show');
+        Route::patch('/orders/{order:order_code}/status', [AdminOrderController::class, 'updateStatus'])
+            ->name('orders.update-status');
     });
 
 /*

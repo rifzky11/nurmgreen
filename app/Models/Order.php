@@ -19,6 +19,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 ])]
 class Order extends Model
 {
+    /** Semua status yang dikenal sistem, sesuai alur utama pesanan. */
+    public const STATUSES = ['pending', 'paid', 'shipped', 'completed', 'cancelled'];
+
     protected function casts(): array
     {
         return [
@@ -38,17 +41,53 @@ class Order extends Model
         return $this->hasMany(OrderItem::class);
     }
 
-    /** Label status berbahasa Indonesia untuk ditampilkan di view. */
-    public function statusLabel(): string
+    /**
+     * Peta transisi status yang diizinkan (state machine pesanan).
+     *
+     * Alur utama: pending -> paid -> shipped -> completed.
+     * Pembatalan hanya boleh sebelum barang dikirim (pending/paid) supaya
+     * stok hanya dikembalikan sekali dan tidak mengembalikan barang yang
+     * sudah dikirim. completed & cancelled adalah status final.
+     */
+    public static function allowedTransitions(): array
     {
-        return match ($this->status) {
+        return [
+            'pending' => ['paid', 'cancelled'],
+            'paid' => ['shipped', 'cancelled'],
+            'shipped' => ['completed'],
+            'completed' => [],
+            'cancelled' => [],
+        ];
+    }
+
+    /** Label status berbahasa Indonesia. */
+    public static function statusLabels(): array
+    {
+        return [
             'pending' => 'Menunggu Pembayaran',
             'paid' => 'Dibayar',
             'shipped' => 'Dikirim',
             'completed' => 'Selesai',
             'cancelled' => 'Dibatalkan',
-            default => ucfirst($this->status),
-        };
+        ];
+    }
+
+    /** Status tujuan yang sah dari status saat ini. */
+    public function nextStatuses(): array
+    {
+        return static::allowedTransitions()[$this->status] ?? [];
+    }
+
+    /** Apakah pesanan boleh berpindah ke status tujuan tertentu. */
+    public function canTransitionTo(string $status): bool
+    {
+        return in_array($status, $this->nextStatuses(), true);
+    }
+
+    /** Label status berbahasa Indonesia untuk ditampilkan di view. */
+    public function statusLabel(): string
+    {
+        return static::statusLabels()[$this->status] ?? ucfirst($this->status);
     }
 
     /** Hanya pesanan pending yang boleh dibatalkan customer. */

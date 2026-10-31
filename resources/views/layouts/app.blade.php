@@ -52,25 +52,76 @@
                             <span class="cart-count">{{ $cartCount > 99 ? '99+' : $cartCount }}</span>
                         @endif
                     </a>
-                    <span class="divider"></span>
-                    @auth
-                        {{-- Menu berbeda sesuai role --}}
-                        @if (auth()->user()->isAdmin())
-                            <a href="{{ route('admin.dashboard') }}" class="btn btn-outline">Dashboard</a>
-                            <a href="{{ route('admin.categories.index') }}" class="btn btn-outline">Kategori</a>
-                            <a href="{{ route('admin.products.index') }}" class="btn btn-outline">Produk</a>
-                        @else
-                            <a href="{{ route('orders.index') }}" class="btn btn-outline">Pesanan</a>
-                        @endif
 
-                        {{-- Sudah login: tampilkan nama & tombol keluar --}}
-                        <span class="user-chip">{{ auth()->user()->name }}</span>
-                        <form action="{{ route('logout') }}" method="POST" class="logout-form">
-                            @csrf
-                            <button type="submit" class="btn btn-outline">Keluar</button>
-                        </form>
+                    @auth
+                        {{-- Navigasi utama diringkas ke satu menu dropdown (burger) --}}
+                        <div class="nav-dropdown">
+                            <button type="button" class="nav-toggle" id="navToggle"
+                                    aria-expanded="false" aria-controls="navMenu"
+                                    aria-haspopup="true" aria-label="Buka menu navigasi">
+                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+                                     stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                                    <path d="M4 7h16M4 12h16M4 17h16"/>
+                                </svg>
+                            </button>
+
+                            <nav class="nav-menu" id="navMenu" aria-label="Menu utama" hidden>
+                                <div class="nav-menu-head">
+                                    <div class="nav-user">
+                                        <span class="nav-menu-name">{{ auth()->user()->name }}</span>
+                                        <span class="nav-menu-email">{{ auth()->user()->email }}</span>
+                                    </div>
+                                    <span class="nav-role">
+                                        {{ auth()->user()->isAdmin() ? 'Admin' : 'Customer' }}
+                                    </span>
+                                </div>
+
+                                <div class="nav-menu-divider"></div>
+
+                                @if (auth()->user()->isAdmin())
+                                    <a href="{{ route('admin.dashboard') }}"
+                                       @class(['nav-link', 'is-active' => request()->routeIs('admin.dashboard')])>
+                                        Dashboard
+                                    </a>
+                                    <a href="{{ route('admin.orders.index') }}"
+                                       @class(['nav-link', 'is-active' => request()->routeIs('admin.orders.*')])>
+                                        Pesanan
+                                    </a>
+                                    <a href="{{ route('admin.products.index') }}"
+                                       @class(['nav-link', 'is-active' => request()->routeIs('admin.products.*')])>
+                                        Produk
+                                    </a>
+                                    <a href="{{ route('admin.categories.index') }}"
+                                       @class(['nav-link', 'is-active' => request()->routeIs('admin.categories.*')])>
+                                        Kategori
+                                    </a>
+                                    <a href="{{ route('home') }}" class="nav-link">Lihat Toko</a>
+                                @else
+                                    <a href="{{ route('home') }}" class="nav-link">Beranda</a>
+                                    <a href="{{ route('catalog.index') }}"
+                                       @class(['nav-link', 'is-active' => request()->routeIs('catalog.*')])>
+                                        Katalog
+                                    </a>
+                                    <a href="{{ route('cart.index') }}"
+                                       @class(['nav-link', 'is-active' => request()->routeIs('cart.*')])>
+                                        Keranjang
+                                    </a>
+                                    <a href="{{ route('orders.index') }}"
+                                       @class(['nav-link', 'is-active' => request()->routeIs('orders.*')])>
+                                        Pesanan Saya
+                                    </a>
+                                @endif
+
+                                <div class="nav-menu-divider"></div>
+
+                                <form action="{{ route('logout') }}" method="POST" class="nav-logout">
+                                    @csrf
+                                    <button type="submit">Keluar</button>
+                                </form>
+                            </nav>
+                        </div>
                     @else
-                        {{-- Belum login: arahkan ke halaman auth --}}
+                        {{-- Belum login: tombol utama tetap terlihat langsung --}}
                         <a href="{{ route('login') }}" class="btn btn-outline">Masuk</a>
                         <a href="{{ route('register') }}" class="btn btn-solid">Daftar</a>
                     @endauth
@@ -101,5 +152,36 @@
     <footer class="site-footer">
         <p class="footer-copy">&copy; {{ date('Y') }} NurmGreen. Toko tanaman, pupuk, dan obat tanaman.</p>
     </footer>
+
+    {{-- Toggle menu burger: klik tombol, klik di luar, atau tombol Escape untuk menutup --}}
+    <script>
+        (() => {
+            const toggle = document.getElementById('navToggle');
+            const menu = document.getElementById('navMenu');
+            if (!toggle || !menu) return;
+
+            const closeMenu = () => {
+                menu.hidden = true;
+                toggle.setAttribute('aria-expanded', 'false');
+            };
+
+            toggle.addEventListener('click', (event) => {
+                event.stopPropagation();
+                const willOpen = menu.hidden;
+                menu.hidden = !willOpen;
+                toggle.setAttribute('aria-expanded', String(willOpen));
+            });
+
+            document.addEventListener('click', (event) => {
+                if (!menu.hidden && !menu.contains(event.target) && !toggle.contains(event.target)) {
+                    closeMenu();
+                }
+            });
+
+            document.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape') closeMenu();
+            });
+        })();
+    </script>
 </body>
 </html>
