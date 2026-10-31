@@ -20,7 +20,7 @@
                 </a>
 
                 <div class="header-search">
-                    <form class="search-box" action="{{ url('/') }}" method="get">
+                    <form class="search-box" action="{{ route('catalog.index') }}" method="get">
                         <button type="submit" aria-label="Cari">
                             <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
                                 <path d="M11.7 10.3a6 6 0 1 0-1.4 1.4l3.3 3.3 1.4-1.4-3.3-3.3zM6 10a4 4 0 1 1 0-8 4 4 0 0 1 0 8z"/>
