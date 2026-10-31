@@ -8,6 +8,7 @@ use App\Http\Controllers\CartController;
 use App\Http\Controllers\CatalogController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\OrderController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -92,7 +93,10 @@ Route::middleware(['auth', 'role:customer'])->group(function () {
     Route::get('/checkout/sukses/{orderCode}', [CheckoutController::class, 'success'])
         ->name('checkout.success');
 
-    // Placeholder; isinya dibuat pada fitur riwayat pesanan.
-    Route::get('/pesanan', fn () => view('customer.coming-soon', ['title' => 'Pesanan Saya']))
-        ->name('orders.index');
+    // Riwayat pesanan customer: daftar, detail, dan pembatalan (pending saja).
+    // {order:order_code} memakai kode pesanan di URL, bukan id.
+    Route::get('/pesanan', [OrderController::class, 'index'])->name('orders.index');
+    Route::get('/pesanan/{order:order_code}', [OrderController::class, 'show'])->name('orders.show');
+    Route::patch('/pesanan/{order:order_code}/batal', [OrderController::class, 'cancel'])
+        ->name('orders.cancel');
 });

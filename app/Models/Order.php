@@ -37,4 +37,23 @@ class Order extends Model
     {
         return $this->hasMany(OrderItem::class);
     }
+
+    /** Label status berbahasa Indonesia untuk ditampilkan di view. */
+    public function statusLabel(): string
+    {
+        return match ($this->status) {
+            'pending' => 'Menunggu Pembayaran',
+            'paid' => 'Dibayar',
+            'shipped' => 'Dikirim',
+            'completed' => 'Selesai',
+            'cancelled' => 'Dibatalkan',
+            default => ucfirst($this->status),
+        };
+    }
+
+    /** Hanya pesanan pending yang boleh dibatalkan customer. */
+    public function canBeCancelled(): bool
+    {
+        return $this->status === 'pending';
+    }
 }
