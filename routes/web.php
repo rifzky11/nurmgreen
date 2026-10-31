@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CatalogController;
+use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\HomeController;
 use Illuminate\Support\Facades\Route;
 
@@ -85,10 +86,13 @@ Route::middleware(['auth', 'role:customer'])->group(function () {
     Route::delete('/keranjang/{cartItem}', [CartController::class, 'destroy'])
         ->name('cart.destroy');
 
-    // Placeholder; isinya dibuat pada fitur checkout/pesanan.
-    Route::get('/checkout', fn () => view('customer.coming-soon', ['title' => 'Checkout']))
-        ->name('checkout.index');
+    // Checkout: form pengiriman, proses pesanan (transaksi DB), halaman sukses.
+    Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
+    Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
+    Route::get('/checkout/sukses/{orderCode}', [CheckoutController::class, 'success'])
+        ->name('checkout.success');
 
+    // Placeholder; isinya dibuat pada fitur riwayat pesanan.
     Route::get('/pesanan', fn () => view('customer.coming-soon', ['title' => 'Pesanan Saya']))
         ->name('orders.index');
 });
