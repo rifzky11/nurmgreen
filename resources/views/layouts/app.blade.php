@@ -31,6 +31,13 @@
                 </div>
 
                 <div class="header-actions">
+                    @php
+                        // Jumlah barang di keranjang (badge ikon keranjang);
+                        // hanya untuk customer — admin tidak punya keranjang.
+                        $cartCount = auth()->check() && ! auth()->user()->isAdmin()
+                            ? (int) auth()->user()->cartItems()->sum('quantity')
+                            : 0;
+                    @endphp
                     <a href="{{ auth()->check()
                             ? (auth()->user()->isAdmin() ? route('admin.dashboard') : route('cart.index'))
                             : route('login') }}"
@@ -41,6 +48,9 @@
                             <circle cx="9" cy="20" r="1.4" fill="currentColor" stroke="none"/>
                             <circle cx="18" cy="20" r="1.4" fill="currentColor" stroke="none"/>
                         </svg>
+                        @if ($cartCount > 0)
+                            <span class="cart-count">{{ $cartCount > 99 ? '99+' : $cartCount }}</span>
+                        @endif
                     </a>
                     <span class="divider"></span>
                     @auth

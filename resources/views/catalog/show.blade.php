@@ -51,7 +51,13 @@
                     @elseif (auth()->user()->isAdmin())
                         <span class="muted">Pratinjau admin &mdash; keranjang hanya untuk customer.</span>
                     @else
-                        <a href="{{ route('cart.index') }}" class="btn btn-solid">+ Keranjang</a>
+                        {{-- Tambah ke keranjang: quantity bertambah jika produk sudah ada --}}
+                        <form action="{{ route('cart.store', $product) }}" method="POST" class="cart-qty-form">
+                            @csrf
+                            <input type="number" name="quantity" value="1" min="1" max="{{ $product->stock }}"
+                                   class="form-control qty-input" aria-label="Jumlah">
+                            <button type="submit" class="btn btn-solid">+ Keranjang</button>
+                        </form>
                     @endguest
                 @else
                     <span class="btn btn-disabled">+ Keranjang</span>

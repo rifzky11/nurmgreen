@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\CartController;
 use App\Http\Controllers\CatalogController;
 use App\Http\Controllers\HomeController;
 use Illuminate\Support\Facades\Route;
@@ -71,10 +72,20 @@ Route::middleware(['auth', 'role:admin'])
 | role:customer  : admin tidak boleh masuk area belanja
 */
 Route::middleware(['auth', 'role:customer'])->group(function () {
-    // Placeholder; isinya dibuat pada fitur keranjang/checkout/pesanan.
-    Route::get('/keranjang', fn () => view('customer.coming-soon', ['title' => 'Keranjang']))
-        ->name('cart.index');
+    Route::get('/keranjang', [CartController::class, 'index'])->name('cart.index');
 
+    // {product:slug}: produk yang ditambahkan (satu baris per produk per user)
+    Route::post('/keranjang/{product:slug}', [CartController::class, 'store'])
+        ->name('cart.store');
+
+    // {cartItem}: baris keranjang; kepemilikan dicek di controller (403)
+    Route::patch('/keranjang/{cartItem}', [CartController::class, 'update'])
+        ->name('cart.update');
+
+    Route::delete('/keranjang/{cartItem}', [CartController::class, 'destroy'])
+        ->name('cart.destroy');
+
+    // Placeholder; isinya dibuat pada fitur checkout/pesanan.
     Route::get('/checkout', fn () => view('customer.coming-soon', ['title' => 'Checkout']))
         ->name('checkout.index');
 
