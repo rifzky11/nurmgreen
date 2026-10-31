@@ -144,12 +144,6 @@
                     @endauth
                 </div>
             </div>
-
-            <div class="header-loc">
-                <p>
-                    Dikirim ke <strong> Alamat Kamu</strong>
-                </p>
-            </div>
         </div>
     </header>
 
