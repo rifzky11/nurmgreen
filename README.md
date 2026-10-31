@@ -18,7 +18,7 @@ Aplikasi web e-commerce untuk UMKM lokal yang menjual **tanaman hias, bibit, pup
 5. [Struktur Direktori](#-struktur-direktori)
 6. [Instalasi Lokal](#-instalasi-lokal)
 7. [Akun Login Demo](#-akun-login-demo)
-8. [Deployment ke Railway (MySQL)](#-deployment-ke-railway-mysql)
+8. [Deployment ke InfinityFree (Shared Hosting)](#-deployment-ke-infinityfree-shared-hosting)
 9. [Ekspor Database ke nurmgreen.sql](#-ekspor-database-ke-nurmgreensql)
 10. [Testing & Code Style](#-testing--code-style)
 11. [Implementasi Keamanan](#-implementasi-keamanan)
@@ -281,30 +281,49 @@ Dibuat oleh `DatabaseSeeder` (`php artisan migrate --seed`):
 
 ---
 
-## 🚀 Deployment ke Railway (MySQL)
+## 🚀 Deployment ke InfinityFree (Shared Hosting)
 
-Panduan ini memakai **Railway** karena mendukung PHP + MySQL dengan konfigurasi sederhana. Alternatif Render dijelaskan di bagian akhir.
+Aplikasi live di-hosting di **InfinityFree** (shared hosting gratis dengan PHP + MySQL remote) pada `https://nurmgreen.infinityfree.me`. Karena shared hosting **tidak menyediakan akses SSH maupun Composer**, seluruh persiapan dilakukan di komputer lokal lalu file diunggah ke server.
 
-### 1. Persiapan
-- Push project ke GitHub.
-- Buat akun [Railway](https://railway.app).
-- Pastikan branch yang di-deploy berisi kode terbaru.
+### 1. Persiapan di komputer lokal
+- Push project ke GitHub; pastikan branch yang di-deploy berisi kode terbaru.
+- Buat akun [InfinityFree](https://www.infinityfree.com) dan subdomain `nurmgreen.infinityfree.me`.
+- Install dependency produksi **secara lokal** (Composer tidak tersedia di server):
 
-### 2. Buat project dan database
-1. **New Project → Deploy from GitHub repo** → pilih repository.
-2. Di project yang sama: **New → Database → MySQL**.
-3. Railway membuat service MySQL beserta variabel koneksinya.
+```bash
+composer install --no-dev --optimize-autoloader
+```
 
-### 3. Variabel environment aplikasi
+Hasilnya folder `vendor/` siap pakai untuk production dan ikut diunggah.
 
-Tambahkan di service aplikasi (**Variables**):
+### 2. Upload file ke htdocs
+- Unggah seluruh isi project ke folder `htdocs/` melalui FTP (mis. FileZilla) atau File Manager di panel InfinityFree.
+- Karena `vendor/` berisi ribuan file kecil, cara tercepat: kompres menjadi `.zip` di lokal, unggah satu file zip, lalu ekstrak lewat File Manager.
+- Jangan ikutkan `.git/`, `node_modules/`, dan `tests/`.
+- File `.env` dibuat manual di server (tidak ikut repository).
+
+### 3. Root .htaccess — rewrite ke public/
+Document root InfinityFree mengarah ke `htdocs/`, bukan ke `public/`. Tambahkan `.htaccess` di root project yang meneruskan seluruh request ke folder `public/`:
+
+```apache
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^$ public/ [L]
+    RewriteRule (.*) public/$1 [L]
+</IfModule>
+```
+
+`public/.htaccess` bawaan Laravel tetap dipertahankan dan menangani front controller `index.php`.
+
+### 4. Konfigurasi .env production
+Buat `.env` di `htdocs/` dengan nilai berikut (host, nama database, user, dan password diambil dari menu **MySQL Databases** di panel InfinityFree):
 
 ```env
 APP_NAME=NurmGreen
 APP_ENV=production
 APP_DEBUG=false
-APP_KEY=base64:ISI_HASIL_KEY_GENERATE
-APP_URL=https://domain-anda.up.railway.app
+APP_KEY=base64:HASIL_KEY_GENERATE
+APP_URL=https://nurmgreen.infinityfree.me
 
 APP_LOCALE=id
 APP_FALLBACK_LOCALE=id
@@ -312,11 +331,11 @@ LOG_CHANNEL=stack
 LOG_LEVEL=error
 
 DB_CONNECTION=mysql
-DB_HOST=${{MySQL.MYSQLHOST}}
-DB_PORT=${{MySQL.MYSQLPORT}}
-DB_DATABASE=${{MySQL.MYSQLDATABASE}}
-DB_USERNAME=${{MySQL.MYSQLUSER}}
-DB_PASSWORD=${{MySQL.MYSQLPASSWORD}}
+DB_HOST=sqlXXX.infinityfree.com
+DB_PORT=3306
+DB_DATABASE=if0_XXXXXXX_nurmgreen
+DB_USERNAME=if0_XXXXXXX
+DB_PASSWORD=PASSWORD_HOSTING
 
 SESSION_DRIVER=database
 SESSION_SECURE_COOKIE=true
@@ -326,81 +345,45 @@ FILESYSTEM_DISK=local
 ```
 
 Catatan:
-- Ganti `MySQL` pada `${{MySQL.*}}` dengan nama service database Anda jika berbeda.
-- Generate `APP_KEY` **sekali** dari lokal: `php artisan key:generate --show`, lalu salin hasilnya. Jangan regenerate setiap deploy karena akan membatalkan session/encoded data lama.
-- `APP_URL` diisi setelah domain Railway dibuat (langkah 7).
-- `SESSION_SECURE_COOKIE=true` karena production memakai HTTPS.
+- Generate `APP_KEY` **sekali** dari lokal: `php artisan key:generate --show`, lalu salin hasilnya. Jangan regenerate karena akan membatalkan session/encoded data lama.
+- `SESSION_SECURE_COOKIE=true` karena production memakai HTTPS (SSL gratis InfinityFree).
+- Karena tidak ada SSH/artisan, config tidak pernah di-cache — setiap perubahan `.env` langsung terbaca setelah di-upload ulang.
+- Pastikan versi PHP di panel (**Select PHP Version**) minimal 8.3.
 
-### 4. Build command
+### 5. Import database via phpMyAdmin
+1. Panel InfinityFree → **MySQL Databases** → buat database, catat host (`sqlXXX.infinityfree.com`), nama database, username, dan password.
+2. Buka phpMyAdmin dari panel, pilih database tersebut.
+3. Tab **Import** → unggah `database/nurmgreen.sql` (hasil ekspor lokal) → **Go**.
+4. Tabel `sessions` ikut terimpor, sehingga `SESSION_DRIVER=database` langsung berfungsi tanpa migrasi tambahan.
 
-```bash
-composer install --no-dev --optimize-autoloader
-```
+### 6. Mengapa Schema::defaultStringLength(191)
+MySQL/MariaDB versi lama membatasi panjang index key 767 byte untuk charset `utf8mb4` (4 byte per karakter). Kolom string yang di-index/unik (mis. `users.email`) dibatasi 191 karakter karena 191 × 4 = 764 byte — masih di bawah batas tersebut. Aturan ini dipanggil sekali di `app/Providers/AppServiceProvider.php` melalui `Schema::defaultStringLength(191)` sehingga migrasi berjalan aman di server hosting.
 
-Tidak perlu `npm install`/`npm run build` karena aset disajikan statis dari `public/`.
-
-### 5. Start command
-
-```bash
-php artisan migrate --force && php artisan storage:link --force && php artisan config:cache && php artisan route:cache && php artisan view:cache && php artisan serve --host=0.0.0.0 --port=$PORT
-```
-
-Untuk production yang lebih serius, gunakan Nginx + PHP-FPM dan jalankan migrasi/cache pada tahap release, bukan setiap start.
-
-### 6. Migrasi di production
-Migrasi dijalankan otomatis lewat start command (`migrate --force`). Perintah manual melalui Railway Shell:
+### 7. Symlink storage — workaround tanpa SSH
+`php artisan storage:link` tidak dapat dijalankan karena tidak ada SSH, dan symlink umumnya tidak diizinkan di shared hosting. Workaround-nya: **ganti symlink `public/storage` menjadi folder asli** yang berisi salinan isi `storage/app/public`:
 
 ```bash
-php artisan migrate --force
-php artisan migrate:status
+# di lokal, sebelum upload
+rm public/storage
+cp -R storage/app/public public/storage
 ```
 
-Aturan penting:
-- **Jangan** memakai `migrate:fresh` di production.
-- Backup database sebelum migrasi besar.
-- Seeder data demo cukup sekali:
+Folder `public/storage/products/` beserta gambarnya ikut diunggah sebagai direktori nyata, sehingga URL gambar produk `/storage/products/...` tetap berfungsi. Jika ada produk baru yang diunggah lewat admin, unggah manual file gambarnya ke `public/storage/products/` via File Manager, atau ulangi salinan lokal di atas.
 
-```bash
-php artisan db:seed --force
-```
+### 8. Permission folder
+Via File Manager InfinityFree, pastikan folder berikut writable (default 755; naikkan ke 775/775–777 bila muncul error permission):
+- `storage/` beserta seluruh subfoldernya (`storage/logs`, `storage/framework`, `storage/app`).
+- `bootstrap/cache/`.
 
-Seeder memakai `updateOrCreate`, tetapi menjalankannya berulang akan mereset password akun demo.
-
-### 7. Domain dan APP_URL
-1. **Settings → Networking → Generate Domain**.
-2. Salin URL HTTPS, isi `APP_URL`, lalu redeploy.
-3. Buka domain dan pastikan halaman login tampil.
-
-### 8. Penanganan storage gambar
-Railway memakai filesystem ephemeral, sehingga upload akan hilang saat redeploy. Tambahkan **Volume** ke service aplikasi dan mount ke:
-
-```text
-/app/storage
-```
-
-Dengan volume ini:
-- gambar produk (`storage/app/public/products`) tetap tersimpan;
-- bukti pembayaran privat (`storage/app/private/payment-proofs`) tetap tersimpan;
-- `php artisan storage:link --force` pada start command membuat ulang symlink `public/storage`.
-
-Alternatif: gunakan object storage S3-compatible, tetapi disk `local` untuk bukti pembayaran perlu dikonfigurasi ulang bila ingin sepenuhnya S3.
+Di shared hosting file dimiliki akun hosting sendiri, sehingga `chown` tidak diperlukan — cukup `chmod` bila terjadi error penulisan log/session/cache.
 
 ### 9. Checklist setelah deploy
-- [ ] Domain HTTPS terbuka.
+- [ ] Subdomain HTTPS terbuka (`https://nurmgreen.infinityfree.me`).
 - [ ] `APP_ENV=production`, `APP_DEBUG=false`, `APP_URL` benar.
-- [ ] Login admin berhasil.
-- [ ] Upload gambar produk tampil setelah redeploy.
-- [ ] Upload bukti pembayaran dapat dilihat admin.
-- [ ] `php artisan migrate:status` tidak ada migrasi pending.
-- [ ] Log Railway tidak menampilkan error.
-
-### Alternatif singkat: Render
-1. Buat **MySQL** instance dan **Web Service** (PHP via Docker).
-2. Gunakan environment yang sama seperti Railway; isi `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD` dari MySQL Render.
-3. Build: `composer install --no-dev --optimize-autoloader`.
-4. Start: `php artisan migrate --force && php artisan storage:link --force && php artisan serve --host=0.0.0.0 --port=$PORT`.
-5. Tambahkan **Persistent Disk** dan mount ke folder `storage` aplikasi, atau pindahkan gambar ke S3-compatible storage. Tanpa disk persisten, upload akan hilang saat redeploy.
-6. Set `APP_URL` ke domain Render dan `SESSION_SECURE_COOKIE=true`.
+- [ ] Login admin berhasil dan tidak muncul `419 Page Expired`.
+- [ ] Gambar produk tampil (folder `public/storage/products` ter-upload).
+- [ ] Upload bukti pembayaran berhasil dan dapat dilihat admin.
+- [ ] `storage/logs/laravel.log` tidak berisi error (dicek via File Manager).
 
 ---
 
@@ -485,22 +468,22 @@ Test memakai SQLite in-memory (`phpunit.xml`), sehingga tidak mengganggu databas
 
 | Masalah | Penyebab & solusi |
 |---|---|
-| **Error 500** | Cek `storage/logs/laravel.log` atau log Railway. Pastikan `APP_KEY` terisi, koneksi DB benar, folder `storage`/`bootstrap/cache` writable, dan `php artisan config:clear` setelah mengubah `.env`. |
-| **Halaman putih / 500 saat `APP_DEBUG=false`** | Sementara set `APP_DEBUG=true` di lokal untuk melihat detail, atau baca log. Jangan biarkan `APP_DEBUG=true` di production. |
-| **Gambar produk tidak tampil** | Jalankan `php artisan storage:link --force`; pastikan `APP_URL` benar dan folder `public/storage` ada. Di Railway, pastikan Volume ter-mount ke `/app/storage`. |
-| **`storage:link` gagal: link already exists** | Jalankan `php artisan storage:link --force`, atau hapus `public/storage` terlebih dahulu (`rm public/storage` di Linux/macOS). Di Windows, jalankan terminal sebagai Administrator. |
-| **Permission denied pada storage/bootstrap cache** | `chmod -R ug+rwx storage bootstrap/cache`; di server Linux: `chown -R www-data:www-data storage bootstrap/cache`. |
-| **`No application encryption key has been specified`** | `php artisan key:generate`. Untuk production, isi `APP_KEY` dari `php artisan key:generate --show` tanpa regenerate setiap deploy. |
-| **`419 Page Expired`** | Token CSRF kedaluwarsa/session hilang. Pastikan form punya `@csrf`, `SESSION_DRIVER=database` dan tabel `sessions` ada, lalu `php artisan optimize:clear`. |
+| **Error 500** | Cek `storage/logs/laravel.log` (unduh via File Manager InfinityFree). Pastikan `APP_KEY` terisi, koneksi DB benar, folder `storage`/`bootstrap/cache` writable, dan `.env` ter-upload lengkap di `htdocs/`. |
+| **Halaman putih / 500 saat `APP_DEBUG=false`** | Sementara set `APP_DEBUG=true` di `.env` hosting untuk melihat detail (hapus kembali setelah selesai), atau baca log. Jangan biarkan `APP_DEBUG=true` di production. |
+| **Gambar produk tidak tampil** | Pastikan `APP_URL` benar dan folder `public/storage/products` ter-upload sebagai folder asli (workaround symlink, lihat bagian deployment). Di lokal cukup `php artisan storage:link --force`. |
+| **`storage:link` gagal: link already exists** | Di lokal jalankan `php artisan storage:link --force` atau hapus `public/storage` terlebih dahulu. Di Windows, jalankan terminal sebagai Administrator. Di shared hosting tanpa SSH, gunakan workaround folder asli `public/storage`. |
+| **Permission denied pada storage/bootstrap cache** | `chmod -R ug+rwx storage bootstrap/cache`; di shared hosting ubah permission via File Manager (755, naik ke 775/777 bila perlu). |
+| **`No application encryption key has been specified`** | `php artisan key:generate`. Untuk production, isi `APP_KEY` dari `php artisan key:generate --show` sekali saja, lalu tulis langsung ke `.env` di server. |
+| **`419 Page Expired`** | Token CSRF kedaluwarsa/session hilang. Pastikan form punya `@csrf`, `SESSION_DRIVER=database` dan tabel `sessions` ikut terimpor dari `nurmgreen.sql`. |
 | **`SQLSTATE[HY000] [1049] Unknown database`** | Buat database `nurmgreen` dan cocokkan `DB_DATABASE`. |
-| **`Connection refused` / `2002`** | MySQL belum berjalan atau `DB_HOST`/`DB_PORT` salah. Di Railway gunakan variabel `${{MySQL.MYSQLHOST}}` dan `${{MySQL.MYSQLPORT}}`. |
+| **`Connection refused` / `2002`** | MySQL belum berjalan atau `DB_HOST`/`DB_PORT` salah. Di InfinityFree gunakan host MySQL dari panel (`sqlXXX.infinityfree.com`), bukan `localhost`. |
 | **Upload gagal / “file terlalu besar”** | Validasi aplikasi maks. 2 MB; cek juga `upload_max_filesize` dan `post_max_size` di `php.ini`. |
-| **Perubahan `.env` tidak terbaca** | `php artisan config:clear` (lokal) atau `php artisan config:cache` ulang setelah perubahan di production. |
-| **`Class not found` setelah menambah file** | `composer dump-autoload`. |
+| **Perubahan `.env` tidak terbaca** | Di server tidak ada config cache (tidak ada SSH), sehingga perubahan `.env` di File Manager langsung berlaku; cukup refresh halaman. Di lokal jalankan `php artisan config:clear`. |
+| **`Class not found` setelah menambah file** | `composer dump-autoload` di lokal, lalu unggah ulang `vendor/composer` ke hosting (Composer tidak tersedia di server). |
 | **CSS tidak muncul** | Pastikan `public/css/app.css` ada dan tidak perlu `npm build`; cek URL aset dan cache browser. |
-| **Migrasi gagal di production** | Cek `php artisan migrate:status`, pastikan DB user punya hak DDL, dan jangan gunakan `migrate:fresh`. Backup terlebih dahulu. |
-| **Deploy Railway berhenti / 502** | Cek build log, pastikan start command memakai `--port=$PORT`, `APP_KEY` terisi, dan service MySQL berada di project yang sama. |
-| **Data upload hilang setelah redeploy** | Filesystem platform ephemeral; tambahkan Volume (Railway) atau Persistent Disk (Render). |
+| **Import SQL gagal di phpMyAdmin** | Pastikan database kosong, ukuran file di bawah batas upload InfinityFree (kompres atau impor per bagian bila perlu), dan charset `utf8mb4` didukung. |
+| **Halaman error / 500 hanya di hosting** | Cek versi PHP di panel (Select PHP Version) minimal 8.3, `vendor/` ter-upload lengkap, dan `.htaccess` root meneruskan ke `public/`. |
+| **Bukti pembayaran gagal tersimpan** | Pastikan `storage/app/private` writable (chmod 775) dan sisa kuota disk hosting mencukupi. |
 
 ---
 
