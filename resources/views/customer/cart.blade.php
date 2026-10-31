@@ -98,7 +98,7 @@
                                 <td><strong class="line-subtotal">Rp {{ number_format($lineSubtotal, 0, ',', '.') }}</strong></td>
                                 <td>
                                     <form action="{{ route('cart.destroy', $item) }}" method="POST"
-                                          onsubmit="return confirm('Hapus {{ $product->name }} dari keranjang?')">
+                                          onsubmit="return confirm('Hapus produk ini dari keranjang?')">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="btn btn-danger">Hapus</button>

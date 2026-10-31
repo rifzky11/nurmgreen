@@ -19,16 +19,26 @@ class UserFactory extends Factory
             'name' => fake()->name(),
             'email' => fake()->unique()->safeEmail(),
             'password' => static::$password ??= Hash::make('password'),
-            'role' => 'customer',
             'phone' => fake()->numerify('08##########'),
             'address' => fake()->address(),
         ];
     }
 
+    /** role bukan mass-assignable; default customer diisi eksplisit. */
+    public function configure(): static
+    {
+        return $this->afterMaking(function (User $user) {
+            if (! $user->role) {
+                $user->forceFill(['role' => 'customer']);
+            }
+        });
+    }
+
+    /** role bukan mass-assignable, jadi diset eksplisit setelah create. */
     public function admin(): static
     {
-        return $this->state(fn (array $attributes) => [
-            'role' => 'admin',
-        ]);
+        return $this->afterCreating(function (User $user) {
+            $user->forceFill(['role' => 'admin'])->save();
+        });
     }
 }

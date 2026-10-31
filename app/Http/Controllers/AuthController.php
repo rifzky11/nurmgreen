@@ -40,8 +40,10 @@ class AuthController extends Controller
             'name' => $data['name'],
             'email' => Str::lower($data['email']), // simpan email huruf kecil agar konsisten saat login
             'password' => Hash::make($data['password']), // password disimpan sebagai hash bcrypt
-            'role' => 'customer', // dipaksa di server, bukan dari form
         ]);
+
+        // role TIDAK mass-assignable; dipaksa di server lewat forceFill.
+        $user->forceFill(['role' => 'customer'])->save();
 
         // Login otomatis setelah daftar
         Auth::login($user);

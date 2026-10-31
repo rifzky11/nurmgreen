@@ -47,15 +47,17 @@ class DatabaseSeeder extends Seeder
         ];
 
         foreach ($users as $data) {
-            User::updateOrCreate(
+            $user = User::updateOrCreate(
                 ['email' => $data['email']], // kunci pencarian
                 [
                     'name' => $data['name'],
                     // Password plaintext hanya ada di seeder, yang disimpan tetap hash
                     'password' => Hash::make($data['password']),
-                    'role' => $data['role'],
                 ]
             );
+
+            // role tidak mass-assignable, jadi di-set eksplisit.
+            $user->forceFill(['role' => $data['role']])->save();
         }
     }
 
