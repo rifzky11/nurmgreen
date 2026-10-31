@@ -47,6 +47,8 @@
                         {{-- Menu berbeda sesuai role --}}
                         @if (auth()->user()->isAdmin())
                             <a href="{{ route('admin.dashboard') }}" class="btn btn-outline">Dashboard</a>
+                            <a href="{{ route('admin.categories.index') }}" class="btn btn-outline">Kategori</a>
+                            <a href="{{ route('admin.products.index') }}" class="btn btn-outline">Produk</a>
                         @else
                             <a href="{{ route('orders.index') }}" class="btn btn-outline">Pesanan</a>
                         @endif
