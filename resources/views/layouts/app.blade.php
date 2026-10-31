@@ -100,6 +100,10 @@
                                        @class(['nav-link', 'is-active' => request()->routeIs('admin.categories.*')])>
                                         Kategori
                                     </a>
+                                    <a href="{{ route('profile.edit') }}"
+                                       @class(['nav-link', 'is-active' => request()->routeIs('profile.*')])>
+                                        Profil Saya
+                                    </a>
                                     <a href="{{ route('home') }}" class="nav-link">Lihat Toko</a>
                                 @else
                                     <a href="{{ route('home') }}" class="nav-link">Beranda</a>
@@ -118,6 +122,10 @@
                                     <a href="{{ route('orders.index') }}"
                                        @class(['nav-link', 'is-active' => request()->routeIs('orders.*')])>
                                         Pesanan Saya
+                                    </a>
+                                    <a href="{{ route('profile.edit') }}"
+                                       @class(['nav-link', 'is-active' => request()->routeIs('profile.*')])>
+                                        Profil Saya
                                     </a>
                                 @endif
 
