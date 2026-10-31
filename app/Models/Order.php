@@ -16,6 +16,10 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'shipping_phone',
     'shipping_address',
     'notes',
+    'payment_proof',
+    'payment_proof_uploaded_at',
+    'shipped_at',
+    'completed_at',
 ])]
 class Order extends Model
 {
@@ -26,6 +30,9 @@ class Order extends Model
     {
         return [
             'total_price' => 'decimal:2',
+            'payment_proof_uploaded_at' => 'datetime',
+            'shipped_at' => 'datetime',
+            'completed_at' => 'datetime',
         ];
     }
 
@@ -45,16 +52,16 @@ class Order extends Model
      * Peta transisi status yang diizinkan (state machine pesanan).
      *
      * Alur utama: pending -> paid -> shipped -> completed.
-     * Pembatalan hanya boleh sebelum barang dikirim (pending/paid) supaya
-     * stok hanya dikembalikan sekali dan tidak mengembalikan barang yang
-     * sudah dikirim. completed & cancelled adalah status final.
+     * Admin hanya boleh sampai "shipped"; status "completed" hanya bisa
+     * diubah oleh buyer lewat endpoint markReceived. Pembatalan hanya
+     * sebelum barang dikirim (pending/paid).
      */
     public static function allowedTransitions(): array
     {
         return [
             'pending' => ['paid', 'cancelled'],
             'paid' => ['shipped', 'cancelled'],
-            'shipped' => ['completed'],
+            'shipped' => [],
             'completed' => [],
             'cancelled' => [],
         ];
@@ -66,10 +73,23 @@ class Order extends Model
         return [
             'pending' => 'Menunggu Pembayaran',
             'paid' => 'Dibayar',
-            'shipped' => 'Dikirim',
-            'completed' => 'Selesai',
+            'shipped' => 'Sedang Dikirim',
+            'completed' => 'Sudah Diterima',
             'cancelled' => 'Dibatalkan',
         ];
+    }
+
+    /** Token warna badge status, dipakai seragam di semua view. */
+    public function statusColor(): string
+    {
+        return match ($this->status) {
+            'pending' => 'warning',
+            'paid' => 'info',
+            'shipped' => 'primary',
+            'completed' => 'success',
+            'cancelled' => 'neutral',
+            default => 'neutral',
+        };
     }
 
     /** Status tujuan yang sah dari status saat ini. */
@@ -94,5 +114,17 @@ class Order extends Model
     public function canBeCancelled(): bool
     {
         return $this->status === 'pending';
+    }
+
+    /** Buyer hanya boleh mengonfirmasi pesanan yang sedang dikirim. */
+    public function canBeReceived(): bool
+    {
+        return $this->status === 'shipped';
+    }
+
+    /** Apakah customer sudah mengunggah bukti pembayaran. */
+    public function hasPaymentProof(): bool
+    {
+        return ! is_null($this->payment_proof);
     }
 }

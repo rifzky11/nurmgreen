@@ -46,6 +46,12 @@ Route::post('/logout', [AuthController::class, 'logout'])
     ->middleware('auth')
     ->name('logout');
 
+// Bukti pembayaran disajikan dari disk privat; hanya pemilik atau admin
+// (dicek OrderPolicy::viewPaymentProof, bukan lewat middleware role).
+Route::get('/orders/{order:order_code}/payment-proof', [OrderController::class, 'paymentProof'])
+    ->middleware('auth')
+    ->name('orders.payment-proof');
+
 /*
 |--------------------------------------------------------------------------
 | Area admin
@@ -115,6 +121,10 @@ Route::middleware(['auth', 'role:customer'])->group(function () {
     // {order:order_code} memakai kode pesanan di URL, bukan id.
     Route::get('/pesanan', [OrderController::class, 'index'])->name('orders.index');
     Route::get('/pesanan/{order:order_code}', [OrderController::class, 'show'])->name('orders.show');
+    Route::post('/pesanan/{order:order_code}/bukti-pembayaran', [OrderController::class, 'uploadProof'])
+        ->name('orders.upload-proof');
+    Route::patch('/orders/{order:order_code}/received', [OrderController::class, 'markReceived'])
+        ->name('orders.received');
     Route::patch('/pesanan/{order:order_code}/batal', [OrderController::class, 'cancel'])
         ->name('orders.cancel');
 });

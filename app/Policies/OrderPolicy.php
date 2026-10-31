@@ -25,4 +25,32 @@ class OrderPolicy
     {
         return $order->user_id === $user->id && $order->status === 'pending';
     }
+
+    /**
+     * Unggah bukti pembayaran hanya untuk pemilik pesanan yang masih pending.
+     * Admin tidak mengunggah bukti, hanya memverifikasi.
+     */
+    public function uploadProof(User $user, Order $order): bool
+    {
+        return $order->user_id === $user->id && $order->status === 'pending';
+    }
+
+    /**
+     * Melihat file bukti pembayaran: pemilik pesanan atau admin.
+     * Dipakai route streaming agar file di disk privat tidak bisa diakses
+     * langsung oleh customer lain.
+     */
+    public function viewPaymentProof(User $user, Order $order): bool
+    {
+        return $user->isAdmin() || $order->user_id === $user->id;
+    }
+
+    /**
+     * Konfirmasi "Sudah Diterima" hanya untuk PEMILIK pesanan dan hanya
+     * saat status "shipped". Admin tidak boleh menandai completed.
+     */
+    public function markReceived(User $user, Order $order): bool
+    {
+        return $order->user_id === $user->id && $order->status === 'shipped';
+    }
 }

@@ -24,7 +24,7 @@
                             <th style="width:170px">Status</th>
                             <th style="width:90px">Item</th>
                             <th style="width:130px">Total</th>
-                            <th style="width:90px"></th>
+                            <th style="width:190px"></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -36,14 +36,20 @@
                                 </td>
                                 <td>{{ $order->created_at->format('d/m/Y H:i') }}</td>
                                 <td>
-                                    <span class="status-badge status-{{ $order->status }}">
+                                    <span class="status-badge status-{{ $order->statusColor() }}">
                                         {{ $order->statusLabel() }}
                                     </span>
                                 </td>
                                 <td>{{ $order->order_items_count }} item</td>
                                 <td><strong>Rp {{ number_format($order->total_price, 0, ',', '.') }}</strong></td>
                                 <td>
-                                    <a href="{{ route('orders.show', $order) }}" class="btn btn-outline">Detail</a>
+                                    <div class="row-actions">
+                                        <a href="{{ route('orders.show', $order) }}" class="btn btn-outline">Detail</a>
+                                        @if ($order->status === 'pending')
+                                            <a href="{{ route('orders.show', $order) }}#upload-bukti"
+                                               class="btn btn-outline">Upload Bukti</a>
+                                        @endif
+                                    </div>
                                 </td>
                             </tr>
                         @endforeach

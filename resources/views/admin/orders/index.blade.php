@@ -21,6 +21,11 @@
                 @endforeach
             </select>
 
+            <select name="proof" class="form-control" aria-label="Filter bukti pembayaran">
+                <option value="">Semua bukti</option>
+                <option value="1" @selected($proof === '1')>Sudah upload bukti</option>
+            </select>
+
             <button type="submit" class="btn btn-solid">Cari</button>
             <a href="{{ route('admin.orders.index') }}" class="btn btn-outline">Reset</a>
         </form>
@@ -33,6 +38,7 @@
                         <th>Customer</th>
                         <th style="width:150px">Tanggal</th>
                         <th style="width:170px">Status</th>
+                        <th style="width:130px">Bukti</th>
                         <th style="width:80px">Item</th>
                         <th style="width:130px">Total</th>
                         <th style="width:90px"></th>
@@ -51,9 +57,16 @@
                             </td>
                             <td>{{ $order->created_at->format('d/m/Y H:i') }}</td>
                             <td>
-                                <span class="status-badge status-{{ $order->status }}">
+                                <span class="status-badge status-{{ $order->statusColor() }}">
                                     {{ $order->statusLabel() }}
                                 </span>
+                            </td>
+                            <td>
+                                @if ($order->hasPaymentProof())
+                                    <span class="badge badge-on">Bukti terunggah</span>
+                                @else
+                                    <span class="muted">&mdash;</span>
+                                @endif
                             </td>
                             <td>{{ $order->order_items_count }} item</td>
                             <td><strong>Rp {{ number_format($order->total_price, 0, ',', '.') }}</strong></td>
@@ -64,7 +77,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="muted">
+                            <td colspan="8" class="muted">
                                 Tidak ada pesanan yang cocok dengan filter.
                             </td>
                         </tr>

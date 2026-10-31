@@ -45,8 +45,9 @@
             @include('customer.partials.transfer-instructions', ['order' => $order])
 
             <div class="cart-footer">
-                <a href="{{ route('orders.index') }}" class="btn btn-outline">Lihat Pesanan</a>
-                <a href="{{ route('catalog.index') }}" class="btn btn-solid">Lanjut Belanja</a>
+                <a href="{{ route('orders.show', $order) }}#upload-bukti" class="btn btn-solid">
+                    Upload Bukti Pembayaran
+                </a>
             </div>
         </div>
     </div>

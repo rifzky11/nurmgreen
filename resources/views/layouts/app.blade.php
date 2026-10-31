@@ -3,10 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'NurmGreen') | Toko Tanaman, Pupuk & Obat Tanaman</title>
     <link rel="stylesheet" href="{{ asset('css/app.css') }}">
 </head>
 <body>
+    {{-- Toast notifikasi global (add to cart) --}}
+    <div id="toast-container" class="toast-container" aria-live="polite" aria-atomic="true"></div>
     <header class="site-header">
         <div class="wrap">
             <div class="header-main">
@@ -189,5 +192,7 @@
             });
         })();
     </script>
+
+    @stack('scripts')
 </body>
 </html>

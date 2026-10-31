@@ -71,8 +71,9 @@ class CartTest extends TestCase
         $product = $this->product();
 
         $this->actingAs($customer)
+            ->from(route('catalog.show', $product))
             ->post(route('cart.store', $product), ['quantity' => 2])
-            ->assertRedirect(route('cart.index'))
+            ->assertRedirect(route('catalog.show', $product))
             ->assertSessionHas('success');
 
         $this->assertDatabaseHas('cart_items', [
@@ -313,7 +314,7 @@ class CartTest extends TestCase
             ->assertSee('id="summarySubtotal"', false)
             ->assertSee('id="summaryTotal"', false)
             ->assertSee('id="cartTypeCount"', false)
-            ->assertSee('Checkout Terpilih')
+            ->assertSee('Checkout')
             ->assertSee('id="selectAll"', false);
     }
 
@@ -378,5 +379,79 @@ class CartTest extends TestCase
             ->assertSee('cart-qty-form', false)
             ->assertSee('cart-line-error', false)
             ->assertDontSee('>Ubah</button>', false);
+    }
+
+    public function test_add_to_cart_via_ajax_returns_success_and_cart_count(): void
+    {
+        $customer = $this->customer();
+        $product = $this->product(['stock' => 5]);
+        $this->item($customer, $this->product(), 2); // item lain: 2 barang
+
+        $this->actingAs($customer)
+            ->postJson(route('cart.store', $product), ['quantity' => 3])
+            ->assertOk()
+            ->assertJson([
+                'success' => true,
+                'cart_count' => 5,
+                'message' => 'Produk ditambahkan ke keranjang.',
+            ]);
+
+        $this->assertDatabaseHas('cart_items', [
+            'user_id' => $customer->id,
+            'product_id' => $product->id,
+            'quantity' => 3,
+        ]);
+    }
+
+    public function test_add_to_cart_via_ajax_returns_stock_error(): void
+    {
+        $customer = $this->customer();
+        $product = $this->product(['stock' => 2]);
+
+        $this->actingAs($customer)
+            ->postJson(route('cart.store', $product), ['quantity' => 3])
+            ->assertStatus(422)
+            ->assertJson([
+                'success' => false,
+            ])
+            ->assertJsonStructure(['message']);
+
+        $this->assertDatabaseCount('cart_items', 0);
+    }
+
+    public function test_add_to_cart_via_ajax_returns_error_for_inactive_product(): void
+    {
+        $customer = $this->customer();
+        $product = $this->product(['is_active' => false]);
+
+        $this->actingAs($customer)
+            ->postJson(route('cart.store', $product), ['quantity' => 1])
+            ->assertStatus(422)
+            ->assertJson([
+                'success' => false,
+                'message' => 'Produk ini sedang tidak tersedia.',
+            ]);
+
+        $this->assertDatabaseCount('cart_items', 0);
+    }
+
+    public function test_layout_exposes_csrf_meta_and_toast_container(): void
+    {
+        $this->get(route('catalog.index'))
+            ->assertOk()
+            ->assertSee('name="csrf-token"', false)
+            ->assertSee('id="toast-container"', false);
+    }
+
+    public function test_product_detail_has_ajax_add_to_cart_form_for_customers(): void
+    {
+        $customer = $this->customer();
+        $product = $this->product();
+
+        $this->actingAs($customer)
+            ->get(route('catalog.show', $product))
+            ->assertOk()
+            ->assertSee('js-add-to-cart', false)
+            ->assertSee('data-login-url', false);
     }
 }
