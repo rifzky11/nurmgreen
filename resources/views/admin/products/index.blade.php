@@ -74,7 +74,7 @@
 
                                     <form action="{{ route('admin.products.destroy', $product) }}"
                                           method="POST"
-                                          onsubmit="return confirm('Hapus produk {{ $product->name }}?')">
+                                          onsubmit="return confirm('Hapus produk ini?')">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="btn btn-danger">Hapus</button>

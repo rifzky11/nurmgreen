@@ -42,7 +42,7 @@
                                     {{-- Hapus harus POST + method DELETE + CSRF --}}
                                     <form action="{{ route('admin.categories.destroy', $category) }}"
                                           method="POST"
-                                          onsubmit="return confirm('Hapus kategori {{ $category->name }}?')">
+                                          onsubmit="return confirm('Hapus kategori ini?')">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="btn btn-danger">Hapus</button>
