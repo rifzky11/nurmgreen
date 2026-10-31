@@ -309,6 +309,13 @@ a { color: inherit; text-decoration: none; }
     color: #fff;
 }
 
+.btn-solid,
+a.btn-solid {
+    border: 1px solid var(--tp-green);
+    background: var(--tp-green);
+    color: #fff !important; 
+}
+
 .btn-solid:hover { background: var(--tp-green-hover); }
 
 .header-loc {
