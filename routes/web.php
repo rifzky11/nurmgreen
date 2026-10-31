@@ -1,6 +1,8 @@
 <?php
 
+use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\AuthController;
 use Illuminate\Support\Facades\Route;
 
@@ -41,6 +43,12 @@ Route::middleware(['auth', 'role:admin'])
     ->name('admin.')
     ->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+        // index, create, store, edit, update, destroy (tanpa show)
+        Route::resource('categories', CategoryController::class)->except('show');
+
+        // Resource lengkap termasuk show (detail produk untuk admin)
+        Route::resource('products', ProductController::class);
     });
 
 /*
