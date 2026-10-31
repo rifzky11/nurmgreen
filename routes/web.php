@@ -4,12 +4,24 @@ use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\CatalogController;
+use App\Http\Controllers\HomeController;
 use Illuminate\Support\Facades\Route;
 
-// Beranda toko
-Route::get('/', function () {
-    return view('home');
-})->name('home');
+/*
+|--------------------------------------------------------------------------
+| Halaman publik (tanpa login)
+|--------------------------------------------------------------------------
+| Beranda, katalog, dan detail produk boleh dibuka siapa pun, termasuk
+| pengunjung yang belum login.
+*/
+Route::get('/', [HomeController::class, 'index'])->name('home');
+
+Route::get('/katalog', [CatalogController::class, 'index'])->name('catalog.index');
+
+// {product:slug}: route model binding lewat kolom slug, bukan id
+Route::get('/produk/{product:slug}', [CatalogController::class, 'show'])
+    ->name('catalog.show');
 
 /*
 |--------------------------------------------------------------------------
