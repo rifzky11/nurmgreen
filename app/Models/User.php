@@ -31,6 +31,12 @@ class User extends Authenticatable
         return $this->hasMany(CartItem::class);
     }
 
+    /** Satu user punya banyak alamat tersimpan (buku alamat). */
+    public function addresses(): HasMany
+    {
+        return $this->hasMany(Address::class);
+    }
+
     /** Satu user punya banyak pesanan. */
     public function orders(): HasMany
     {

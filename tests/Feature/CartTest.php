@@ -280,7 +280,8 @@ class CartTest extends TestCase
         $this->actingAs($customer)
             ->get(route('catalog.index'))
             ->assertOk()
-            ->assertSee('<span class="cart-count">5</span>', false);
+            ->assertSee('id="cartCountBadge"', false)
+            ->assertSee('>5</span>', false);
     }
 
     public function test_navbar_hides_count_for_guest_and_admin(): void
@@ -293,5 +294,89 @@ class CartTest extends TestCase
             ->get(route('admin.dashboard'))
             ->assertOk()
             ->assertDontSee('cart-count', false);
+    }
+
+    public function test_cart_rows_have_checkboxes_for_selective_checkout(): void
+    {
+        $customer = $this->customer();
+        $item = $this->item($customer, $this->product(), 2);
+
+        $this->actingAs($customer)
+            ->get(route('cart.index'))
+            ->assertOk()
+            ->assertSee('name="items[]"', false)
+            ->assertSee('value="'.$item->id.'"', false)
+            ->assertSee('form="checkout-form"', false)
+            ->assertSee('data-subtotal="100000"', false)
+            ->assertSee('data-quantity="2"', false)
+            ->assertSee('id="summaryLabel"', false)
+            ->assertSee('id="summarySubtotal"', false)
+            ->assertSee('id="summaryTotal"', false)
+            ->assertSee('id="cartTypeCount"', false)
+            ->assertSee('Checkout Terpilih')
+            ->assertSee('id="selectAll"', false);
+    }
+
+    public function test_cart_subtotal_sums_all_rows_without_row_value_overwriting_it(): void
+    {
+        $customer = $this->customer();
+        $first = $this->product(['name' => 'Monstera', 'price' => 50000]);
+        $second = $this->product(['name' => 'Lidah Mertua', 'price' => 20000]);
+
+        $this->item($customer, $first, 1);  // 50.000
+        $this->item($customer, $second, 2); // 40.000
+
+        $this->actingAs($customer)
+            ->get(route('cart.index'))
+            ->assertOk()
+            ->assertSee('Subtotal (3 barang)')
+            ->assertSee('Rp 90.000'); // total seluruh baris, bukan subtotal baris terakhir
+    }
+
+    public function test_quantity_update_via_ajax_returns_line_and_cart_totals(): void
+    {
+        $customer = $this->customer();
+        $product = $this->product(['price' => 50000, 'stock' => 5]);
+        $item = $this->item($customer, $product, 1);
+
+        $this->actingAs($customer)
+            ->patchJson(route('cart.update', $item), ['quantity' => 3])
+            ->assertOk()
+            ->assertJson([
+                'quantity' => 3,
+                'line_subtotal' => 150000,
+                'formatted_line_subtotal' => 'Rp 150.000',
+                'cart_quantity' => 3,
+                'max_quantity' => 5,
+            ]);
+
+        $this->assertDatabaseHas('cart_items', ['id' => $item->id, 'quantity' => 3]);
+    }
+
+    public function test_ajax_quantity_update_returns_error_when_stock_is_insufficient(): void
+    {
+        $customer = $this->customer();
+        $product = $this->product(['stock' => 2]);
+        $item = $this->item($customer, $product, 1);
+
+        $this->actingAs($customer)
+            ->patchJson(route('cart.update', $item), ['quantity' => 3])
+            ->assertStatus(422)
+            ->assertJsonStructure(['message']);
+
+        $this->assertDatabaseHas('cart_items', ['id' => $item->id, 'quantity' => 1]);
+    }
+
+    public function test_cart_has_no_manual_ubah_button(): void
+    {
+        $customer = $this->customer();
+        $this->item($customer, $this->product(), 1);
+
+        $this->actingAs($customer)
+            ->get(route('cart.index'))
+            ->assertOk()
+            ->assertSee('cart-qty-form', false)
+            ->assertSee('cart-line-error', false)
+            ->assertDontSee('>Ubah</button>', false);
     }
 }

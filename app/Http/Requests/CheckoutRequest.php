@@ -22,6 +22,10 @@ class CheckoutRequest extends FormRequest
     public function rules(): array
     {
         return [
+            // ID baris keranjang yang dipilih user. Opsional: tanpa "items"
+            // berarti checkout seluruh isi keranjang (kompatibel dengan form lama).
+            'items' => ['sometimes', 'array', 'min:1'],
+            'items.*' => ['integer', 'distinct'],
             'shipping_name' => ['required', 'string', 'max:100'],
             'shipping_phone' => ['required', 'string', 'max:20', 'regex:/^[0-9+\-\s()]{8,20}$/'],
             'shipping_address' => ['required', 'string', 'max:500'],
@@ -32,6 +36,9 @@ class CheckoutRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'items.min' => 'Pilih minimal satu produk untuk checkout.',
+            'items.*.integer' => 'Produk yang dipilih tidak valid.',
+            'items.*.distinct' => 'Produk yang dipilih tidak boleh duplikat.',
             'shipping_name.required' => 'Nama penerima wajib diisi.',
             'shipping_name.max' => 'Nama penerima maksimal 100 karakter.',
             'shipping_phone.required' => 'Nomor HP wajib diisi.',

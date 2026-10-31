@@ -1345,3 +1345,133 @@ a { color: inherit; text-decoration: none; }
 @media (max-width: 480px) {
     .stat-grid { grid-template-columns: 1fr; }
 }
+
+/* —— Pilihan item keranjang —— */
+.cart-select,
+.cart-select-all {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    accent-color: var(--tp-green);
+}
+
+.cart-select-hint { margin: 0 0 10px; }
+
+/* —— Buku alamat customer —— */
+.address-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.address-card {
+    display: grid;
+    align-content: start;
+    gap: 4px;
+    font-size: 13px;
+}
+
+.address-card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 2px;
+}
+
+.address-label {
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.address-text {
+    margin: 0 0 6px;
+    line-height: 1.6;
+}
+
+.address-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 6px;
+}
+
+.address-actions form { margin: 0; }
+
+.address-form-panel { max-width: 620px; }
+
+/* Pilihan alamat tersimpan di form checkout */
+.saved-address {
+    display: grid;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.saved-address-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .03em;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+
+.saved-address-head a { color: var(--tp-green); }
+
+.address-option {
+    display: flex;
+    gap: 10px;
+    padding: 10px 12px;
+    font-size: 13px;
+    line-height: 1.5;
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    cursor: pointer;
+}
+
+.address-option:has(input:checked) {
+    background: var(--tp-green-soft);
+    border-color: var(--tp-green);
+}
+
+.address-option input {
+    margin-top: 3px;
+    accent-color: var(--tp-green);
+}
+
+.address-option strong { margin-right: 6px; }
+
+.address-option .muted { display: block; }
+
+@media (max-width: 800px) {
+    .address-list { grid-template-columns: 1fr; }
+}
+
+.form-hint a {
+    font-weight: 600;
+    color: var(--tp-green);
+}
+
+.btn:disabled {
+    opacity: .55;
+    cursor: not-allowed;
+}
+
+/* Jumlah keranjang: input + pesan error per baris */
+.qty-wrap {
+    display: grid;
+    gap: 4px;
+}
+
+.cart-line-error {
+    font-size: 11px;
+    line-height: 1.4;
+    color: #b42318;
+}
+
+.cart-qty-form.is-saving { opacity: .6; }
