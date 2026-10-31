@@ -1179,11 +1179,12 @@ a { color: inherit; text-decoration: none; }
     border-radius: 999px;
 }
 
-.status-pending { background: #fff4e0; color: #b26a00; }
-.status-paid { background: #e6f0ff; color: #1d4ed8; }
-.status-shipped { background: #e8f8ea; color: #0a7a12; }
-.status-completed { background: #dcf5dd; color: #08600c; }
-.status-cancelled { background: #f1f2f4; color: #6d7588; }
+/* Token warna status dipakai konsisten lewat Order::statusColor(). */
+.status-warning { background: #fff4e0; color: #b26a00; }
+.status-info { background: #e6f0ff; color: #1d4ed8; }
+.status-primary { background: #e8f8ea; color: #0a7a12; }
+.status-success { background: #dcf5dd; color: #08600c; }
+.status-neutral { background: #f1f2f4; color: #6d7588; }
 
 .order-detail-head {
     display: flex;
@@ -1276,7 +1277,7 @@ a { color: inherit; text-decoration: none; }
 /* —— Dashboard admin —— */
 .stat-grid {
     display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(175px, 1fr));
     gap: 12px;
     margin-bottom: 16px;
 }
@@ -1338,7 +1339,6 @@ a { color: inherit; text-decoration: none; }
 }
 
 @media (max-width: 1000px) {
-    .stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .dashboard-grid { grid-template-columns: 1fr; }
 }
 
@@ -1475,3 +1475,179 @@ a { color: inherit; text-decoration: none; }
 }
 
 .cart-qty-form.is-saving { opacity: .6; }
+
+/* —— Bukti pembayaran —— */
+.payment-proof-panel {
+    margin-top: 16px;
+    padding: 16px;
+    background: #fafcfa;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+}
+
+.payment-proof-panel h3 {
+    margin: 0 0 10px;
+    font-size: 15px;
+}
+
+.payment-proof-preview {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: flex-start;
+}
+
+.payment-proof-preview p {
+    margin: 0 0 8px;
+    font-size: 13px;
+    color: var(--muted);
+}
+
+.proof-thumb {
+    display: block;
+    width: 150px;
+    height: 105px;
+    object-fit: cover;
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+}
+
+.proof-form {
+    max-width: 420px;
+    margin-top: 14px;
+}
+
+.proof-form .form-control { padding: 8px; }
+
+/* —— Toast notifikasi (add to cart) —— */
+.toast-container {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    z-index: 200;
+    display: grid;
+    gap: 8px;
+    max-width: min(360px, calc(100vw - 32px));
+}
+
+.toast {
+    padding: 12px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.5;
+    color: #fff;
+    border-radius: 10px;
+    box-shadow: 0 10px 24px rgba(17, 24, 39, .18);
+    animation: toast-in .18s ease-out;
+}
+
+.toast-success { background: #0a7a12; }
+.toast-error { background: #b42318; }
+
+.toast-hide {
+    opacity: 0;
+    transform: translateY(-6px);
+    transition: opacity .2s ease, transform .2s ease;
+}
+
+@keyframes toast-in {
+    from { opacity: 0; transform: translateY(-6px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* —— Timeline status pesanan (buyer) —— */
+.status-stepper {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+    margin: 18px 0;
+    padding: 0;
+    list-style: none;
+}
+
+.status-stepper .step {
+    position: relative;
+    padding-top: 24px;
+    font-size: 12px;
+    color: var(--muted);
+}
+
+.status-stepper .step::before {
+    content: '';
+    position: absolute;
+    top: 7px;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: var(--line);
+}
+
+.status-stepper .step:first-child::before {
+    left: 50%;
+    width: 50%;
+}
+
+.status-stepper .step:last-child::before { width: 50%; }
+
+.status-stepper .step::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: calc(50% - 6px);
+    width: 12px;
+    height: 12px;
+    background: var(--white);
+    border: 2px solid var(--line);
+    border-radius: 50%;
+}
+
+.status-stepper .step.is-done::before,
+.status-stepper .step.is-current::before {
+    background: var(--tp-green);
+}
+
+.status-stepper .step.is-done::after {
+    background: var(--tp-green);
+    border-color: var(--tp-green);
+}
+
+.status-stepper .step.is-current::after {
+    background: var(--white);
+    border-color: var(--tp-green);
+    box-shadow: 0 0 0 3px var(--tp-green-soft);
+}
+
+.status-stepper .step.is-done { color: var(--text); }
+
+.status-stepper .step.is-current {
+    color: var(--tp-green);
+    font-weight: 700;
+}
+
+.step-label { display: block; }
+
+.step-time {
+    display: block;
+    margin-top: 2px;
+    font-size: 11px;
+    font-weight: 400;
+    color: var(--muted);
+}
+
+.status-cancelled-state {
+    margin: 16px 0;
+    padding: 14px;
+    background: #fafcfa;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+}
+
+.status-cancelled-state p { margin: 6px 0 0; }
+
+@media (max-width: 640px) {
+    .status-stepper { grid-template-columns: 1fr; gap: 6px; }
+    .status-stepper .step { padding-top: 0; padding-left: 24px; }
+    .status-stepper .step::before { display: none; }
+    .status-stepper .step::after { top: 3px; left: 0; }
+}

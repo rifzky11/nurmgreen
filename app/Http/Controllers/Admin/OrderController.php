@@ -21,6 +21,7 @@ class OrderController extends Controller
     {
         $search = trim((string) $request->query('q', ''));
         $status = (string) $request->query('status', '');
+        $proof = (string) $request->query('proof', '');
 
         $orders = Order::with('user')
             ->withCount('orderItems')
@@ -33,6 +34,10 @@ class OrderController extends Controller
             ->when(in_array($status, Order::STATUSES, true), function ($query) use ($status) {
                 $query->where('status', $status);
             })
+            ->when($proof === '1', function ($query) {
+                // Filter "Sudah upload bukti pembayaran".
+                $query->whereNotNull('payment_proof');
+            })
             ->latest()
             ->paginate(10)
             ->withQueryString();
@@ -41,6 +46,7 @@ class OrderController extends Controller
             'orders' => $orders,
             'search' => $search,
             'status' => $status,
+            'proof' => $proof,
             'statusOptions' => Order::statusLabels(),
         ]);
     }
@@ -90,7 +96,14 @@ class OrderController extends Controller
                 }
             }
 
-            $locked->update(['status' => $newStatus]);
+            $attributes = ['status' => $newStatus];
+
+            // Catat waktu pengiriman saat admin mengubah paid -> shipped.
+            if ($newStatus === 'shipped') {
+                $attributes['shipped_at'] = now();
+            }
+
+            $locked->update($attributes);
 
             return true;
         });

@@ -40,6 +40,13 @@
                 <span class="stat-value">{{ number_format($pendingOrders, 0, ',', '.') }}</span>
                 <span class="stat-link">Tindak lanjuti</span>
             </a>
+
+            <a href="{{ route('admin.orders.index', ['status' => 'pending', 'proof' => '1']) }}"
+               class="panel stat-card stat-warning">
+                <span class="stat-label">Menunggu Verifikasi</span>
+                <span class="stat-value">{{ number_format($pendingWithProof, 0, ',', '.') }}</span>
+                <span class="stat-link">Pesanan dengan bukti</span>
+            </a>
         </div>
 
         <div class="dashboard-grid">
@@ -75,7 +82,7 @@
                                         <div class="muted">{{ $order->created_at->format('d/m/Y H:i') }}</div>
                                     </td>
                                     <td>
-                                        <span class="status-badge status-{{ $order->status }}">
+                                        <span class="status-badge status-{{ $order->statusColor() }}">
                                             {{ $order->statusLabel() }}
                                         </span>
                                     </td>

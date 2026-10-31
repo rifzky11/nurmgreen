@@ -18,8 +18,14 @@
                 <div>
                     <h2 class="order-detail-title">{{ $order->order_code }}</h2>
                     <p class="order-meta">Dibuat {{ $order->created_at->format('d/m/Y H:i') }}</p>
+                    @if ($order->shipped_at)
+                        <p class="order-meta">Dikirim {{ $order->shipped_at->format('d/m/Y H:i') }}</p>
+                    @endif
+                    @if ($order->completed_at)
+                        <p class="order-meta">Diterima {{ $order->completed_at->format('d/m/Y H:i') }}</p>
+                    @endif
                 </div>
-                <span class="status-badge status-{{ $order->status }}">
+                <span class="status-badge status-{{ $order->statusColor() }}">
                     {{ $order->statusLabel() }}
                 </span>
             </div>
@@ -43,6 +49,30 @@
                         <p class="muted">Catatan: {{ $order->notes }}</p>
                     @endif
                 </div>
+            </div>
+
+            {{-- Bukti pembayaran dari customer (file disk privat, dibuka via route) --}}
+            <div class="payment-proof-panel">
+                <h3>Bukti Pembayaran</h3>
+
+                @if ($order->hasPaymentProof())
+                    <div class="payment-proof-preview">
+                        <a href="{{ route('orders.payment-proof', $order) }}"
+                           target="_blank" rel="noopener">
+                            <img src="{{ route('orders.payment-proof', $order) }}"
+                                 alt="Bukti pembayaran {{ $order->order_code }}" class="proof-thumb">
+                        </a>
+                        <div>
+                            <p>Diunggah {{ $order->payment_proof_uploaded_at?->format('d/m/Y H:i') }}</p>
+                            <a href="{{ route('orders.payment-proof', $order) }}"
+                               target="_blank" rel="noopener" class="btn btn-outline">
+                                Lihat Ukuran Penuh
+                            </a>
+                        </div>
+                    </div>
+                @else
+                    <p class="muted">Belum ada bukti pembayaran.</p>
+                @endif
             </div>
 
             <table class="table">

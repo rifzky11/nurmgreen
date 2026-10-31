@@ -211,14 +211,14 @@ class AdminOrderTest extends TestCase
         $this->assertSame(3, $product->fresh()->stock);
     }
 
-    public function test_full_happy_path_pending_paid_shipped_completed(): void
+    public function test_full_happy_path_pending_paid_shipped(): void
     {
         $customer = $this->customer();
         $product = $this->product(['stock' => 3]);
         $order = $this->orderFor($customer, [[$product, 2]]);
         $admin = $this->admin();
 
-        foreach (['paid', 'shipped', 'completed'] as $status) {
+        foreach (['paid', 'shipped'] as $status) {
             $this->actingAs($admin)
                 ->patch(route('admin.orders.update-status', $order), ['status' => $status])
                 ->assertSessionHas('success');
@@ -226,8 +226,65 @@ class AdminOrderTest extends TestCase
             $this->assertSame($status, $order->fresh()->status);
         }
 
+        // Waktu kirim tercatat; admin tidak boleh menandai completed.
+        $this->assertNotNull($order->fresh()->shipped_at);
+        $this->assertNull($order->fresh()->completed_at);
+
         // Stok hanya berubah saat pembatalan, bukan saat maju status.
         $this->assertSame(3, $product->fresh()->stock);
+    }
+
+    public function test_admin_cannot_mark_order_as_completed(): void
+    {
+        $customer = $this->customer();
+        $order = $this->orderFor($customer, [], ['status' => 'shipped', 'shipped_at' => now()]);
+
+        $this->actingAs($this->admin())
+            ->patch(route('admin.orders.update-status', $order), ['status' => 'completed'])
+            ->assertSessionHasErrors('status');
+
+        $this->assertSame('shipped', $order->fresh()->status);
+        $this->assertNull($order->fresh()->completed_at);
+    }
+
+    public function test_admin_detail_has_no_completed_option(): void
+    {
+        $customer = $this->customer();
+        $order = $this->orderFor($customer, [], ['status' => 'paid']);
+
+        $this->actingAs($this->admin())
+            ->get(route('admin.orders.show', $order))
+            ->assertOk()
+            ->assertSee('<option value="shipped">', false)
+            ->assertSee('<option value="cancelled">', false)
+            ->assertDontSee('<option value="completed">', false);
+    }
+
+    public function test_admin_detail_shows_shipped_and_completed_timestamps(): void
+    {
+        $customer = $this->customer();
+
+        $shipped = $this->orderFor($customer, [], [
+            'status' => 'shipped',
+            'shipped_at' => now()->subDay(),
+        ]);
+        $completed = $this->orderFor($customer, [], [
+            'status' => 'completed',
+            'shipped_at' => now()->subDays(2),
+            'completed_at' => now()->subDay(),
+        ]);
+
+        $this->actingAs($this->admin())
+            ->get(route('admin.orders.show', $shipped))
+            ->assertOk()
+            ->assertSee('Sedang Dikirim')
+            ->assertSee('Dikirim '.$shipped->shipped_at->format('d/m/Y H:i'));
+
+        $this->actingAs($this->admin())
+            ->get(route('admin.orders.show', $completed))
+            ->assertOk()
+            ->assertSee('Sudah Diterima')
+            ->assertSee('Diterima '.$completed->completed_at->format('d/m/Y H:i'));
     }
 
     public function test_cancelling_pending_order_restores_stock(): void
@@ -286,6 +343,7 @@ class AdminOrderTest extends TestCase
             ['pending', 'pending'],
             ['paid', 'completed'],
             ['paid', 'paid'],
+            ['shipped', 'completed'],
             ['shipped', 'paid'],
             ['completed', 'paid'],
             ['cancelled', 'paid'],

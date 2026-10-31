@@ -31,6 +31,11 @@ class DashboardController extends Controller
         $totalOrders = Order::count();
         $pendingOrders = Order::where('status', 'pending')->count();
 
+        // Pesanan pending yang sudah punya bukti tetapi belum diverifikasi admin.
+        $pendingWithProof = Order::where('status', 'pending')
+            ->whereNotNull('payment_proof')
+            ->count();
+
         // SUM(total_price) dengan filter status = omzet dari pesanan yang
         // sudah dibayar/diproses/selesai; pending & cancelled tidak dihitung.
         $totalRevenue = (float) Order::whereIn('status', self::REVENUE_STATUSES)
@@ -61,6 +66,7 @@ class DashboardController extends Controller
             'totalOrders',
             'totalRevenue',
             'pendingOrders',
+            'pendingWithProof',
             'recentOrders',
             'lowStockProducts',
         ));

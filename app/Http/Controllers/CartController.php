@@ -36,7 +36,7 @@ class CartController extends Controller
      * Tambah produk ke keranjang. Jika produk sudah ada di keranjang,
      * quantity-nya ditambah (satu baris per produk, dijaga unique constraint).
      */
-    public function store(Request $request, Product $product): RedirectResponse
+    public function store(Request $request, Product $product): RedirectResponse|JsonResponse
     {
         $validated = $request->validate([
             'quantity' => ['required', 'integer', 'min:1'],
@@ -86,10 +86,29 @@ class CartController extends Controller
         });
 
         if (! $result['ok']) {
+            // AJAX: 422 + pesan agar toast menampilkan error tanpa reload.
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $result['message'],
+                ], 422);
+            }
+
             return back()->with('error', $result['message']);
         }
 
-        return redirect()->route('cart.index')->with('success', 'Produk ditambahkan ke keranjang.');
+        $cartCount = (int) CartItem::where('user_id', $userId)->sum('quantity');
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Produk ditambahkan ke keranjang.',
+                'cart_count' => $cartCount,
+            ]);
+        }
+
+        // Fallback tanpa JavaScript: kembali ke halaman produk, bukan ke keranjang.
+        return back()->with('success', 'Produk ditambahkan ke keranjang.');
     }
 
     /**

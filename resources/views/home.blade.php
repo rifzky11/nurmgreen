@@ -7,7 +7,6 @@
     <a href="{{ route('catalog.index') }}" class="banner">
         <div class="banner-overlay">
             <h1>Malas ke kebun? Belanja tanaman dari rumah.</h1>
-            <span class="btn">Cek Sekarang</span>
         </div>
     </a>
 
