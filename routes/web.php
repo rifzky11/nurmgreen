@@ -11,6 +11,7 @@ use App\Http\Controllers\CatalogController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\OrderController;
+use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -51,6 +52,14 @@ Route::post('/logout', [AuthController::class, 'logout'])
 Route::get('/orders/{order:order_code}/payment-proof', [OrderController::class, 'paymentProof'])
     ->middleware('auth')
     ->name('orders.payment-proof');
+
+// Profil & ubah password: tersedia untuk semua user yang login (admin/customer).
+Route::middleware('auth')->group(function () {
+    Route::get('/profil', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::put('/profil', [ProfileController::class, 'update'])->name('profile.update');
+    Route::put('/profil/password', [ProfileController::class, 'updatePassword'])
+        ->name('profile.password');
+});
 
 /*
 |--------------------------------------------------------------------------
